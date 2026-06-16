@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProjectsModule } from './projects/projects.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SimulationModule } from './simulation/simulation.module';
 
 @Module({
   imports: [
@@ -14,7 +18,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DATABASE_HOST', 'localhost'),
-        port: Number(configService.get<number>('DATABASE_PORT', 5432)),
+        port: Number(configService.get<number>('DATABASE_PORT', 5433)),
         username: configService.get<string>('DATABASE_USER', 'postgres'),
         password: configService.get<string>('DATABASE_PASSWORD', 'postgres'),
         database: configService.get<string>('DATABASE_NAME', 'monitoring'),
@@ -22,6 +26,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         synchronize: true,
       }),
     }),
+
+    ProjectsModule,
+    MonitoringModule,
+    AnalyticsModule,
+    SimulationModule,
   ],
 })
 export class AppModule {}
