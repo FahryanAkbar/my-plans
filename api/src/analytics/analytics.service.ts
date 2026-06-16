@@ -204,4 +204,71 @@ export class AnalyticsService implements OnModuleInit {
       (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
     );
   }
+
+  /**
+   * Retrieves the historical uptime percentage trend (time-series) for all configs under a project.
+   */
+  async getUptimeHistory(projectId: string, range: string = '30d') {
+    // Validate range parameter to prevent Flux injection
+    const validRanges = ['24h', '7d', '30d'];
+    const cleanRange = validRanges.includes(range) ? range : '30d';
+
+    // Map range to a reasonable aggregation window size
+    const windowMap: Record<string, string> = {
+      '24h': '1h',
+      '7d': '12h',
+      '30d': '1d',
+    };
+    const windowSize = windowMap[cleanRange] || '1d';
+
+    const fluxQuery = `
+      from(bucket: "${this.bucket}")
+        |> range(start: -${cleanRange})
+        |> filter(fn: (r) => r["_measurement"] == "http_checks")
+        |> filter(fn: (r) => r["projectId"] == "${projectId}")
+        |> filter(fn: (r) => r["_field"] == "isUp")
+        // Map boolean isUp true -> 1.0 and false -> 0.0
+        |> map(fn: (r) => ({ r with _value: if r._value == true then 1.0 else 0.0 }))
+        // Group and calculate the average (mean) success rate for each window
+        |> aggregateWindow(every: ${windowSize}, fn: mean, createEmpty: false)
+        // Convert mean (0.0 to 1.0) to percentage (0.0 to 100.0)
+        |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))
+        |> keep(columns: ["_time", "_value", "configId", "url"])
+        |> sort(columns: ["_time"], desc: false)
+    `;
+
+    const rows = await this.queryApi.collectRows<any>(fluxQuery);
+
+    // Group rows by configId
+    const grouped: Record<
+      string,
+      {
+        configId: string;
+        url: string;
+        series: Array<{ time: string; uptimePercentage: number }>;
+      }
+    > = {};
+
+    for (const row of rows) {
+      const { configId, url, _time, _value } = row as {
+        configId: string;
+        url: string;
+        _time: string;
+        _value: number;
+      };
+      if (!grouped[configId]) {
+        grouped[configId] = {
+          configId,
+          url,
+          series: [],
+        };
+      }
+      grouped[configId].series.push({
+        time: _time,
+        uptimePercentage: parseFloat(_value.toFixed(3)),
+      });
+    }
+
+    return Object.values(grouped);
+  }
 }

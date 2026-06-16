@@ -28,4 +28,12 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getDowntimeHistory(projectId, range);
   }
+
+  @Get('projects/:projectId/uptime-history')
+  getUptimeHistory(
+    @Param('projectId') projectId: string,
+    @Query('range') range?: string,
+  ) {
+    return this.analyticsService.getUptimeHistory(projectId, range);
+  }
 }
