@@ -103,7 +103,7 @@ function checkSslCertificate(
 async function pingTarget(
   url: string,
   timeoutMs: number,
-): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string; timings?: null }> {
+): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string; timings?: null; pageSize?: number }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -121,10 +121,14 @@ async function pingTarget(
 
     clearTimeout(timer);
 
+    const contentLength = response.headers.get('content-length');
+    const pageSize = contentLength ? parseInt(contentLength, 10) : 0;
+
     return {
       isUp: response.status >= 200 && response.status < 400,
       latency: Math.round(latency),
       statusCode: response.status,
+      pageSize,
     };
   } catch (err: any) {
     clearTimeout(timer);
@@ -141,6 +145,7 @@ async function pingTarget(
       latency: Math.round(latency),
       statusCode: 0,
       errorMessage: errMsg,
+      pageSize: 0,
     };
   }
 }
@@ -195,6 +200,7 @@ async function pingTargetWithPuppeteer(
   statusCode: number;
   errorMessage?: string;
   timings?: { dns: number; tcp: number; tls: number; ttfb: number; download: number } | null;
+  pageSize?: number;
 }> {
   let page;
   try {
@@ -253,11 +259,26 @@ async function pingTargetWithPuppeteer(
       console.error('[Worker] Failed to extract performance timings:', e);
     }
 
+    // Extract page size (total network transfer size in bytes)
+    let pageSize = 0;
+    try {
+      pageSize = await page.evaluate(() => {
+        const resources = performance.getEntriesByType('resource') as any[];
+        const resourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+        const [nav] = performance.getEntriesByType('navigation') as any[];
+        const docSize = nav ? (nav.transferSize || 0) : 0;
+        return resourceSize + docSize;
+      });
+    } catch (e) {
+      console.error('[Worker] Failed to extract page size:', e);
+    }
+
     return {
       isUp,
       latency: Math.round(latency),
       statusCode,
       timings,
+      pageSize,
     };
   } catch (err: any) {
     let errMsg = err.message || 'Unknown browser navigation error';
@@ -269,6 +290,7 @@ async function pingTargetWithPuppeteer(
       latency: timeoutMs,
       statusCode: 0,
       errorMessage: errMsg,
+      pageSize: 0,
     };
   } finally {
     if (page) {
@@ -357,6 +379,10 @@ const worker = new Worker(
 
       if (sslDaysRemaining !== undefined) {
         point.intField('sslDaysRemaining', sslDaysRemaining);
+      }
+
+      if (pingResult.pageSize !== undefined) {
+        point.intField('pageSize', pingResult.pageSize);
       }
 
       if (pingResult.timings) {
