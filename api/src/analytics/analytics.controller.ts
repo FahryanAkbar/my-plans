@@ -36,4 +36,12 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getUptimeHistory(projectId, range);
   }
+
+  @Get('projects/:projectId/timing-breakdown')
+  getTimingBreakdown(
+    @Param('projectId') projectId: string,
+    @Query('range') range?: string,
+  ) {
+    return this.analyticsService.getTimingBreakdown(projectId, range);
+  }
 }

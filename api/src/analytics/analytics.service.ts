@@ -271,4 +271,73 @@ export class AnalyticsService implements OnModuleInit {
 
     return Object.values(grouped);
   }
+
+  /**
+   * Retrieves the average network timing breakdown (DNS, TCP, TLS, TTFB, Download) for all configs under a project.
+   */
+  async getTimingBreakdown(projectId: string, range: string = '24h') {
+    const validRanges = ['1h', '6h', '12h', '24h', '7d', '30d'];
+    const cleanRange = validRanges.includes(range) ? range : '24h';
+
+    const fluxQuery = `
+      from(bucket: "${this.bucket}")
+        |> range(start: -${cleanRange})
+        |> filter(fn: (r) => r["_measurement"] == "http_checks")
+        |> filter(fn: (r) => r["projectId"] == "${projectId}")
+        |> filter(fn: (r) => r["_field"] =~ /Time$/)
+        |> mean()
+        |> keep(columns: ["_field", "_value", "configId", "url"])
+    `;
+
+    const rows = await this.queryApi.collectRows<any>(fluxQuery);
+
+    const grouped: Record<
+      string,
+      {
+        configId: string;
+        url: string;
+        dns: number;
+        tcp: number;
+        tls: number;
+        ttfb: number;
+        download: number;
+      }
+    > = {};
+
+    for (const row of rows) {
+      const { configId, url, _field, _value } = row as {
+        configId: string;
+        url: string;
+        _field: string;
+        _value: number;
+      };
+
+      if (!grouped[configId]) {
+        grouped[configId] = {
+          configId,
+          url,
+          dns: 0,
+          tcp: 0,
+          tls: 0,
+          ttfb: 0,
+          download: 0,
+        };
+      }
+
+      const val = _value ? parseFloat(_value.toFixed(2)) : 0;
+      if (_field === 'dnsTime') {
+        grouped[configId].dns = val;
+      } else if (_field === 'tcpTime') {
+        grouped[configId].tcp = val;
+      } else if (_field === 'tlsTime') {
+        grouped[configId].tls = val;
+      } else if (_field === 'ttfbTime') {
+        grouped[configId].ttfb = val;
+      } else if (_field === 'downloadTime') {
+        grouped[configId].download = val;
+      }
+    }
+
+    return Object.values(grouped);
+  }
 }

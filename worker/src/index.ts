@@ -103,7 +103,7 @@ function checkSslCertificate(
 async function pingTarget(
   url: string,
   timeoutMs: number,
-): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string }> {
+): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string; timings?: null }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -189,7 +189,13 @@ async function pingTargetWithPuppeteer(
   url: string,
   profileName: string,
   timeoutMs: number,
-): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string }> {
+): Promise<{
+  isUp: boolean;
+  latency: number;
+  statusCode: number;
+  errorMessage?: string;
+  timings?: { dns: number; tcp: number; tls: number; ttfb: number; download: number } | null;
+}> {
   let page;
   try {
     const browser = await getBrowserInstance();
@@ -222,10 +228,36 @@ async function pingTargetWithPuppeteer(
     const statusCode = response ? response.status() : 0;
     const isUp = statusCode >= 200 && statusCode < 400;
 
+    // Extract navigation timings
+    let timings = null;
+    try {
+      timings = await page.evaluate(() => {
+        const [t] = performance.getEntriesByType('navigation') as any[];
+        if (!t) return null;
+
+        const dns = Math.max(0, Math.round(t.domainLookupEnd - t.domainLookupStart));
+        const secureConnect = t.secureConnectionStart || 0;
+        const tcp = secureConnect > 0
+          ? Math.max(0, Math.round(secureConnect - t.connectStart))
+          : Math.max(0, Math.round(t.connectEnd - t.connectStart));
+        const tls = secureConnect > 0
+          ? Math.max(0, Math.round(t.connectEnd - secureConnect))
+          : 0;
+        const ttfb = Math.max(0, Math.round(t.responseStart - t.requestStart));
+        const loadEnd = t.loadEventEnd || t.responseEnd;
+        const download = Math.max(0, Math.round(loadEnd - t.responseStart));
+
+        return { dns, tcp, tls, ttfb, download };
+      });
+    } catch (e) {
+      console.error('[Worker] Failed to extract performance timings:', e);
+    }
+
     return {
       isUp,
       latency: Math.round(latency),
       statusCode,
+      timings,
     };
   } catch (err: any) {
     let errMsg = err.message || 'Unknown browser navigation error';
@@ -325,6 +357,14 @@ const worker = new Worker(
 
       if (sslDaysRemaining !== undefined) {
         point.intField('sslDaysRemaining', sslDaysRemaining);
+      }
+
+      if (pingResult.timings) {
+        point.floatField('dnsTime', pingResult.timings.dns)
+          .floatField('tcpTime', pingResult.timings.tcp)
+          .floatField('tlsTime', pingResult.timings.tls)
+          .floatField('ttfbTime', pingResult.timings.ttfb)
+          .floatField('downloadTime', pingResult.timings.download);
       }
 
       writeApi.writePoint(point);
