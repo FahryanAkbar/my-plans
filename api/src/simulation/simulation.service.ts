@@ -73,9 +73,24 @@ export class SimulationService implements OnModuleInit {
         |> sort(columns: ["_time"], desc: false)
     `;
 
+    interface InfluxBaseRow {
+      configId: string;
+      _time: string;
+      _value: number;
+    }
+
+    interface InfluxPuppeteerRow {
+      configId: string;
+      url: string;
+      networkProfile: string;
+      _time: string;
+      _field: string;
+      _value: string;
+    }
+
     const [puppeteerRows, baseRows] = await Promise.all([
-      this.queryApi.collectRows<any>(puppeteerQuery),
-      this.queryApi.collectRows<any>(baseQuery),
+      this.queryApi.collectRows<InfluxPuppeteerRow>(puppeteerQuery),
+      this.queryApi.collectRows<InfluxBaseRow>(baseQuery),
     ]);
 
     // Group base/HTTP checks by configId and time
@@ -84,11 +99,7 @@ export class SimulationService implements OnModuleInit {
       Array<{ time: number; latency: number }>
     > = {};
     for (const row of baseRows) {
-      const { configId, _time, _value } = row as {
-        configId: string;
-        _time: string;
-        _value: number;
-      };
+      const { configId, _time, _value } = row;
       if (!baseLatencyMap[configId]) {
         baseLatencyMap[configId] = [];
       }
@@ -114,14 +125,7 @@ export class SimulationService implements OnModuleInit {
     > = {};
 
     for (const row of puppeteerRows) {
-      const { configId, url, networkProfile, _time, _field, _value } = row as {
-        configId: string;
-        url: string;
-        networkProfile: string;
-        _time: string;
-        _field: string;
-        _value: string;
-      };
+      const { configId, url, networkProfile, _time, _field, _value } = row;
       if (!mergedPuppeteer[configId]) {
         mergedPuppeteer[configId] = {};
       }

@@ -6,6 +6,10 @@ import { InfluxDB, Point } from '@influxdata/influxdb-client';
 import * as https from 'https';
 import { URL } from 'url';
 import puppeteer, { Browser } from 'puppeteer';
+import { Redis as IORedis } from 'ioredis';
+import * as os from 'os';
+
+// import IORedis from 'ioredis';
 
 // --- CONFIGURATION ---
 const redisHost = process.env.REDIS_HOST || 'localhost';
@@ -19,6 +23,36 @@ const influxBucket = process.env.INFLUXDB_BUCKET || 'monitoring';
 console.log('[Worker] Starting monitoring worker...');
 console.log(`[Worker] Redis Host: ${redisHost}:${redisPort}`);
 console.log(`[Worker] InfluxDB URL: ${influxUrl}, Bucket: ${influxBucket}`);
+
+const redisClient = new IORedis({
+  host: redisHost,
+  port: redisPort,
+});
+
+let activeJobsCount = 0;
+const hostname = os.hostname();
+const pid = process.pid;
+const heartbeatKey = `worker:heartbeat:${hostname}:${pid}`;
+
+async function sendHeartbeat() {
+  try {
+    const status = {
+      hostname,
+      pid,
+      uptime: Math.round(process.uptime()),
+      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
+      activeJobs: activeJobsCount,
+      timestamp: new Date().toISOString(),
+    };
+    await redisClient.set(heartbeatKey, JSON.stringify(status), 'EX', 15);
+  } catch (err: any) {
+    console.error('[Worker] Failed to send heartbeat to Redis:', err.message);
+  }
+}
+
+// Start sending heartbeats every 10 seconds
+sendHeartbeat();
+const heartbeatInterval = setInterval(sendHeartbeat, 10000);
 
 // --- INITIALIZE INFLUXDB ---
 const influxDB = new InfluxDB({ url: influxUrl, token: influxToken });
@@ -307,97 +341,102 @@ async function pingTargetWithPuppeteer(
 const worker = new Worker(
   'monitoring-queue',
   async (job: Job) => {
-    const {
-      configId,
-      projectId,
-      url,
-      timeout,
-      expectedStatus,
-      checkSsl,
-      engine,
-      networkProfile,
-    } = job.data;
-    console.log(
-      `[Worker] Job ${job.id} -> Checking target: ${url} (Config: ${configId}, Engine: ${engine || 'HTTP'}, Profile: ${networkProfile || 'WIFI'})`,
-    );
-
-    const timeoutMs = timeout || 30000;
-    const expected = expectedStatus || 200;
-
-    // 1. Perform Network measurement check (HTTP Fetch or Puppeteer Chrome Throttling)
-    let pingResult;
-    if (engine === 'PUPPETEER') {
-      pingResult = await pingTargetWithPuppeteer(url, networkProfile || 'WIFI', timeoutMs);
-    } else {
-      pingResult = await pingTarget(url, timeoutMs);
-    }
-
-    // 2. Perform SSL Check (only if URL is HTTPS and checkSsl option is enabled)
-    let sslValid = true;
-    let sslDaysRemaining: number | undefined;
-    let sslError: string | undefined;
-
-    if (url.startsWith('https:') && checkSsl !== false) {
-      const sslResult = await checkSslCertificate(url, timeoutMs);
-      sslValid = sslResult.valid;
-      sslDaysRemaining = sslResult.daysRemaining;
-      sslError = sslResult.error;
-    }
-
-    // 3. Final validation (override isUp if status code does not match expected status code)
-    let isUp = pingResult.isUp;
-    let errorMsg = pingResult.errorMessage;
-
-    if (isUp && pingResult.statusCode !== expected) {
-      isUp = false;
-      errorMsg = `Status code mismatch. Expected ${expected}, got ${pingResult.statusCode}`;
-    }
-
-    if (!sslValid) {
-      isUp = false;
-      errorMsg = errorMsg ? `${errorMsg} | SSL Error: ${sslError || 'Invalid'}` : `SSL Error: ${sslError || 'Invalid'}`;
-    }
-
-    console.log(
-      `[Worker] Result for ${url} -> isUp: ${isUp}, Latency: ${pingResult.latency}ms, Status: ${pingResult.statusCode}, SSL Valid: ${sslValid}${errorMsg ? ` | Error: ${errorMsg}` : ''}`,
-    );
-
-    // 4. Save metrics as data point in InfluxDB
+    activeJobsCount++;
     try {
-      const point = new Point('http_checks')
-        .tag('projectId', projectId)
-        .tag('configId', configId)
-        .tag('url', url)
-        .tag('status', isUp ? 'success' : 'failed')
-        .tag('engine', engine || 'HTTP')
-        .tag('networkProfile', networkProfile || 'WIFI')
-        .floatField('latency', pingResult.latency)
-        .intField('statusCode', pingResult.statusCode)
-        .booleanField('isUp', isUp)
-        .booleanField('sslValid', sslValid)
-        .stringField('errorMessage', errorMsg || '');
+      const {
+        configId,
+        projectId,
+        url,
+        timeout,
+        expectedStatus,
+        checkSsl,
+        engine,
+        networkProfile,
+      } = job.data;
+      console.log(
+        `[Worker] Job ${job.id} -> Checking target: ${url} (Config: ${configId}, Engine: ${engine || 'HTTP'}, Profile: ${networkProfile || 'WIFI'})`,
+      );
 
-      if (sslDaysRemaining !== undefined) {
-        point.intField('sslDaysRemaining', sslDaysRemaining);
+      const timeoutMs = timeout || 30000;
+      const expected = expectedStatus || 200;
+
+      // 1. Perform Network measurement check (HTTP Fetch or Puppeteer Chrome Throttling)
+      let pingResult;
+      if (engine === 'PUPPETEER') {
+        pingResult = await pingTargetWithPuppeteer(url, networkProfile || 'WIFI', timeoutMs);
+      } else {
+        pingResult = await pingTarget(url, timeoutMs);
       }
 
-      if (pingResult.pageSize !== undefined) {
-        point.intField('pageSize', pingResult.pageSize);
+      // 2. Perform SSL Check (only if URL is HTTPS and checkSsl option is enabled)
+      let sslValid = true;
+      let sslDaysRemaining: number | undefined;
+      let sslError: string | undefined;
+
+      if (url.startsWith('https:') && checkSsl !== false) {
+        const sslResult = await checkSslCertificate(url, timeoutMs);
+        sslValid = sslResult.valid;
+        sslDaysRemaining = sslResult.daysRemaining;
+        sslError = sslResult.error;
       }
 
-      if (pingResult.timings) {
-        point.floatField('dnsTime', pingResult.timings.dns)
-          .floatField('tcpTime', pingResult.timings.tcp)
-          .floatField('tlsTime', pingResult.timings.tls)
-          .floatField('ttfbTime', pingResult.timings.ttfb)
-          .floatField('downloadTime', pingResult.timings.download);
+      // 3. Final validation (override isUp if status code does not match expected status code)
+      let isUp = pingResult.isUp;
+      let errorMsg = pingResult.errorMessage;
+
+      if (isUp && pingResult.statusCode !== expected) {
+        isUp = false;
+        errorMsg = `Status code mismatch. Expected ${expected}, got ${pingResult.statusCode}`;
       }
 
-      writeApi.writePoint(point);
-      await writeApi.flush();
-      console.log(`[Worker] Metric written to InfluxDB for ${url}`);
-    } catch (dbErr: any) {
-      console.error(`[Worker] Failed to write metric to InfluxDB: ${dbErr.message}`);
+      if (!sslValid) {
+        isUp = false;
+        errorMsg = errorMsg ? `${errorMsg} | SSL Error: ${sslError || 'Invalid'}` : `SSL Error: ${sslError || 'Invalid'}`;
+      }
+
+      console.log(
+        `[Worker] Result for ${url} -> isUp: ${isUp}, Latency: ${pingResult.latency}ms, Status: ${pingResult.statusCode}, SSL Valid: ${sslValid}${errorMsg ? ` | Error: ${errorMsg}` : ''}`,
+      );
+
+      // 4. Save metrics as data point in InfluxDB
+      try {
+        const point = new Point('http_checks')
+          .tag('projectId', projectId)
+          .tag('configId', configId)
+          .tag('url', url)
+          .tag('status', isUp ? 'success' : 'failed')
+          .tag('engine', engine || 'HTTP')
+          .tag('networkProfile', networkProfile || 'WIFI')
+          .floatField('latency', pingResult.latency)
+          .intField('statusCode', pingResult.statusCode)
+          .booleanField('isUp', isUp)
+          .booleanField('sslValid', sslValid)
+          .stringField('errorMessage', errorMsg || '');
+
+        if (sslDaysRemaining !== undefined) {
+          point.intField('sslDaysRemaining', sslDaysRemaining);
+        }
+
+        if (pingResult.pageSize !== undefined) {
+          point.intField('pageSize', pingResult.pageSize);
+        }
+
+        if (pingResult.timings) {
+          point.floatField('dnsTime', pingResult.timings.dns)
+            .floatField('tcpTime', pingResult.timings.tcp)
+            .floatField('tlsTime', pingResult.timings.tls)
+            .floatField('ttfbTime', pingResult.timings.ttfb)
+            .floatField('downloadTime', pingResult.timings.download);
+        }
+
+        writeApi.writePoint(point);
+        await writeApi.flush();
+        console.log(`[Worker] Metric written to InfluxDB for ${url}`);
+      } catch (dbErr: any) {
+        console.error(`[Worker] Failed to write metric to InfluxDB: ${dbErr.message}`);
+      }
+    } finally {
+      activeJobsCount--;
     }
   },
   {
@@ -420,6 +459,7 @@ worker.on('error', (err) => {
 // --- GRACEFUL SHUTDOWN ---
 const shutdown = async (signal: string) => {
   console.log(`[Worker] Received ${signal}. Shutting down worker...`);
+  clearInterval(heartbeatInterval);
   try {
     await worker.close();
     await writeApi.close();
@@ -427,6 +467,9 @@ const shutdown = async (signal: string) => {
       await globalBrowser.close();
       console.log('[Worker] Puppeteer browser instance closed.');
     }
+    // Delete heartbeat key from Redis
+    await redisClient.del(heartbeatKey);
+    await redisClient.quit();
     console.log('[Worker] Graceful shutdown complete.');
     process.exit(0);
   } catch (err: any) {
