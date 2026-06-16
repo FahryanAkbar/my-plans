@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,7 +16,7 @@ import { CreateMonitoringConfigDto } from './dto/create-monitoring-config.dto';
 import { UpdateMonitoringConfigDto } from './dto/update-monitoring-config.dto';
 
 @Injectable()
-export class ProjectsService {
+export class ProjectsService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
@@ -24,6 +25,23 @@ export class ProjectsService {
     @InjectQueue('monitoring-queue')
     private readonly monitoringQueue: Queue,
   ) {}
+
+  async onApplicationBootstrap() {
+    console.log('[API] Syncing active monitoring configs with Redis Queue...');
+    const activeConfigs = await this.configRepository.find({
+      where: { enabled: true, isArchived: false },
+    });
+
+    console.log(
+      `[API] Found ${activeConfigs.length} active configs to register.`,
+    );
+
+    for (const config of activeConfigs) {
+      await this.addMonitoringJob(config);
+      console.log(`[API] Registered repeatable job for URL: ${config.url}`);
+    }
+    console.log('[API] Redis Queue synchronization complete.');
+  }
 
   // --- PROJECT CRUD ---
 
