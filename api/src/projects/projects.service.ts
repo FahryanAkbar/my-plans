@@ -163,7 +163,14 @@ export class ProjectsService {
     // Add repeatable job using config.id as jobId
     await this.monitoringQueue.add(
       'ping-job',
-      { configId: config.id, url: config.url },
+      {
+        configId: config.id,
+        projectId: config.projectId,
+        url: config.url,
+        timeout: config.timeout,
+        expectedStatus: config.expectedStatus,
+        checkSsl: config.checkSsl,
+      },
       {
         jobId: config.id, // unique ID of the job
         repeat: {
