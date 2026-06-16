@@ -1,0 +1,10 @@
+postgres-data/
+influxdb-data/
+
+.env
+
+node_modules/
+
+dist/
+
+*.log
