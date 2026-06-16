@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { Project } from './entities/project.entity';
 import { MonitoringConfig } from './entities/monitoring-config.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -19,6 +21,8 @@ export class ProjectsService {
     private readonly projectRepository: Repository<Project>,
     @InjectRepository(MonitoringConfig)
     private readonly configRepository: Repository<MonitoringConfig>,
+    @InjectQueue('monitoring-queue')
+    private readonly monitoringQueue: Queue,
   ) {}
 
   // --- PROJECT CRUD ---
@@ -64,6 +68,14 @@ export class ProjectsService {
 
   async removeProject(id: string): Promise<void> {
     const project = await this.findOneProject(id);
+
+    // Remove all monitoring jobs for this project from Redis
+    if (project.monitoringConfigs && project.monitoringConfigs.length > 0) {
+      for (const config of project.monitoringConfigs) {
+        await this.removeMonitoringJob(config.id);
+      }
+    }
+
     await this.projectRepository.remove(project);
   }
 
@@ -80,7 +92,14 @@ export class ProjectsService {
       ...dto,
       projectId,
     });
-    return this.configRepository.save(config);
+    const savedConfig = await this.configRepository.save(config);
+
+    // Add to Redis Queue if enabled
+    if (savedConfig.enabled && !savedConfig.isArchived) {
+      await this.addMonitoringJob(savedConfig);
+    }
+
+    return savedConfig;
   }
 
   async findConfigsByProject(projectId: string): Promise<MonitoringConfig[]> {
@@ -112,7 +131,16 @@ export class ProjectsService {
   ): Promise<MonitoringConfig> {
     const config = await this.findOneConfig(projectId, configId);
     Object.assign(config, dto);
-    return this.configRepository.save(config);
+    const savedConfig = await this.configRepository.save(config);
+
+    // Sync repeatable job in Queue
+    if (savedConfig.enabled && !savedConfig.isArchived) {
+      await this.addMonitoringJob(savedConfig);
+    } else {
+      await this.removeMonitoringJob(savedConfig.id);
+    }
+
+    return savedConfig;
   }
 
   async removeConfig(projectId: string, configId: string): Promise<void> {
@@ -121,5 +149,37 @@ export class ProjectsService {
     config.isArchived = true;
     config.enabled = false;
     await this.configRepository.save(config);
+
+    // Remove job from Queue
+    await this.removeMonitoringJob(config.id);
+  }
+
+  // --- QUEUE JOB HELPERS ---
+
+  async addMonitoringJob(config: MonitoringConfig): Promise<void> {
+    // Ensure any previous job configuration for this config is removed first
+    await this.removeMonitoringJob(config.id);
+
+    // Add repeatable job using config.id as jobId
+    await this.monitoringQueue.add(
+      'ping-job',
+      { configId: config.id, url: config.url },
+      {
+        jobId: config.id, // unique ID of the job
+        repeat: {
+          every: config.interval,
+        },
+        removeOnComplete: true, // clean up finished jobs from Redis
+        removeOnFail: true,
+      },
+    );
+  }
+
+  async removeMonitoringJob(configId: string): Promise<void> {
+    const repeatableJobs = await this.monitoringQueue.getRepeatableJobs();
+    const job = repeatableJobs.find((j) => j.id === configId);
+    if (job) {
+      await this.monitoringQueue.removeRepeatableByKey(job.key);
+    }
   }
 }
