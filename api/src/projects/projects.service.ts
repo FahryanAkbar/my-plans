@@ -188,6 +188,8 @@ export class ProjectsService implements OnApplicationBootstrap {
         timeout: config.timeout,
         expectedStatus: config.expectedStatus,
         checkSsl: config.checkSsl,
+        engine: config.engine,
+        networkProfile: config.networkProfile,
       },
       {
         jobId: config.id, // unique ID of the job
@@ -202,9 +204,27 @@ export class ProjectsService implements OnApplicationBootstrap {
 
   async removeMonitoringJob(configId: string): Promise<void> {
     const repeatableJobs = await this.monitoringQueue.getRepeatableJobs();
-    const job = repeatableJobs.find((j) => j.id === configId);
-    if (job) {
-      await this.monitoringQueue.removeRepeatableByKey(job.key);
+    const client = await this.monitoringQueue.client;
+    for (const job of repeatableJobs) {
+      const rawData = await client.hget(
+        `bull:${this.monitoringQueue.name}:repeat:${job.key}`,
+        'data',
+      );
+      if (rawData) {
+        try {
+          const parsed = JSON.parse(rawData) as Record<string, unknown>;
+          if (parsed && parsed.configId === configId) {
+            await this.monitoringQueue.removeRepeatableByKey(job.key);
+            console.log(
+              `[API] Successfully removed stale repeatable job key: ${job.key} for config ${configId}`,
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[API] Error parsing repeatable job data for config ${configId}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
     }
   }
 }

@@ -5,6 +5,7 @@ import { Worker, Job } from 'bullmq';
 import { InfluxDB, Point } from '@influxdata/influxdb-client';
 import * as https from 'https';
 import { URL } from 'url';
+import puppeteer, { Browser } from 'puppeteer';
 
 // --- CONFIGURATION ---
 const redisHost = process.env.REDIS_HOST || 'localhost';
@@ -144,18 +145,138 @@ async function pingTarget(
   }
 }
 
+// --- PUPPETEER NETWORK EMULATION CONFIG ---
+const THROTTLING_PROFILES: Record<string, { latency: number; download: number; upload: number }> = {
+  WIFI: {
+    latency: 0,
+    download: -1,
+    upload: -1,
+  },
+  NETWORK_4G: {
+    latency: 20,
+    download: (4 * 1024 * 1024) / 8, // 4 Mbps
+    upload: (3 * 1024 * 1024) / 8, // 3 Mbps
+  },
+  NETWORK_3G: {
+    latency: 300,
+    download: (500 * 1024) / 8, // 500 Kbps
+    upload: (256 * 1024) / 8, // 256 Kbps
+  },
+  FAST_3G: {
+    latency: 150,
+    download: (1.5 * 1024 * 1024) / 8, // 1.5 Mbps
+    upload: (750 * 1024) / 8, // 750 Kbps
+  },
+};
+
+let globalBrowser: Browser | null = null;
+
+async function getBrowserInstance(): Promise<Browser> {
+  if (!globalBrowser) {
+    globalBrowser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+    console.log('[Worker] Puppeteer browser initialized.');
+  }
+  return globalBrowser;
+}
+
+/**
+ * Pings target using Puppeteer browser navigation with simulated network throttling.
+ */
+async function pingTargetWithPuppeteer(
+  url: string,
+  profileName: string,
+  timeoutMs: number,
+): Promise<{ isUp: boolean; latency: number; statusCode: number; errorMessage?: string }> {
+  let page;
+  try {
+    const browser = await getBrowserInstance();
+    page = await browser.newPage();
+    await page.setCacheEnabled(false);
+
+    const client = await page.target().createCDPSession();
+    await client.send('Network.enable');
+
+    const profile = THROTTLING_PROFILES[profileName] || THROTTLING_PROFILES['WIFI'] || {
+      latency: 0,
+      download: -1,
+      upload: -1,
+    };
+    await client.send('Network.emulateNetworkConditions', {
+      offline: false,
+      latency: profile.latency,
+      downloadThroughput: profile.download,
+      uploadThroughput: profile.upload,
+    });
+
+    const startTime = process.hrtime.bigint();
+    const response = await page.goto(url, {
+      waitUntil: 'load',
+      timeout: timeoutMs,
+    });
+    const endTime = process.hrtime.bigint();
+
+    const latency = Number(endTime - startTime) / 1_000_000;
+    const statusCode = response ? response.status() : 0;
+    const isUp = statusCode >= 200 && statusCode < 400;
+
+    return {
+      isUp,
+      latency: Math.round(latency),
+      statusCode,
+    };
+  } catch (err: any) {
+    let errMsg = err.message || 'Unknown browser navigation error';
+    if (err.name === 'TimeoutError' || errMsg.includes('timeout')) {
+      errMsg = 'Request Timeout';
+    }
+    return {
+      isUp: false,
+      latency: timeoutMs,
+      statusCode: 0,
+      errorMessage: errMsg,
+    };
+  } finally {
+    if (page) {
+      try {
+        await page.close();
+      } catch (closeErr: any) {
+        console.error('[Worker] Error closing Puppeteer page:', closeErr.message);
+      }
+    }
+  }
+}
+
 // --- SETUP BULLMQ WORKER ---
 const worker = new Worker(
   'monitoring-queue',
   async (job: Job) => {
-    const { configId, projectId, url, timeout, expectedStatus, checkSsl } = job.data;
-    console.log(`[Worker] Job ${job.id} -> Checking target: ${url} (Config: ${configId})`);
+    const {
+      configId,
+      projectId,
+      url,
+      timeout,
+      expectedStatus,
+      checkSsl,
+      engine,
+      networkProfile,
+    } = job.data;
+    console.log(
+      `[Worker] Job ${job.id} -> Checking target: ${url} (Config: ${configId}, Engine: ${engine || 'HTTP'}, Profile: ${networkProfile || 'WIFI'})`,
+    );
 
     const timeoutMs = timeout || 30000;
     const expected = expectedStatus || 200;
 
-    // 1. Perform HTTP Ping and Latency check
-    const pingResult = await pingTarget(url, timeoutMs);
+    // 1. Perform Network measurement check (HTTP Fetch or Puppeteer Chrome Throttling)
+    let pingResult;
+    if (engine === 'PUPPETEER') {
+      pingResult = await pingTargetWithPuppeteer(url, networkProfile || 'WIFI', timeoutMs);
+    } else {
+      pingResult = await pingTarget(url, timeoutMs);
+    }
 
     // 2. Perform SSL Check (only if URL is HTTPS and checkSsl option is enabled)
     let sslValid = true;
@@ -194,6 +315,8 @@ const worker = new Worker(
         .tag('configId', configId)
         .tag('url', url)
         .tag('status', isUp ? 'success' : 'failed')
+        .tag('engine', engine || 'HTTP')
+        .tag('networkProfile', networkProfile || 'WIFI')
         .floatField('latency', pingResult.latency)
         .intField('statusCode', pingResult.statusCode)
         .booleanField('isUp', isUp)
@@ -234,6 +357,10 @@ const shutdown = async (signal: string) => {
   try {
     await worker.close();
     await writeApi.close();
+    if (globalBrowser) {
+      await globalBrowser.close();
+      console.log('[Worker] Puppeteer browser instance closed.');
+    }
     console.log('[Worker] Graceful shutdown complete.');
     process.exit(0);
   } catch (err: any) {
