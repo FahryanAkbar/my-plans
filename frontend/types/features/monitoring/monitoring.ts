@@ -1,3 +1,13 @@
+// --- Monitoring System Types (Health & Workers) ---
+
+export interface ApiMetadata {
+  name: string;
+  version: string;
+  status: string;
+  uptime: number; // in seconds
+  timestamp: string; // ISO date string
+}
+
 export interface DatabaseHealth {
   status: 'UP' | 'DOWN';
   latencyMs?: number;
