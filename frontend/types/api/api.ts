@@ -21,3 +21,24 @@ export interface PaginatedResponse<T> {
   data: T[]
   meta: PaginationMeta
 }
+
+export interface BaseResponse<T> {
+  code: string
+  message: string
+  data: T
+}
+
+export interface ApiResponse<T> {
+  code: string
+  message: string
+  data: {
+    items: T[]
+    meta: PaginationMeta
+  }
+}
+
+export interface ErrorResponse {
+  code?: string
+  message: string
+  errors?: Record<string, string[]>
+}
