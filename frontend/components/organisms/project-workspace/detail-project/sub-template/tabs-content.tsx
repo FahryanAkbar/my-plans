@@ -10,6 +10,7 @@ import { ProjectQuickStats } from "./quick-stats";
 import { Id, Doc } from "@/convex/_generated/dataModel";
 import { InviteMemberPayload, InviteMembersResult } from '@/types/features'
 import { cn } from "@/lib";
+import { MonitoringTab } from "../../monitoring-website";
 
 interface TabContentProps {
   activeTab: ProjectTab;
@@ -238,6 +239,12 @@ export const ProjectTabsContent = ({
               );
             })()}
           </div>
+        </div>
+      )}
+
+      {activeTab === "monitoring" && (
+        <div className="w-full">
+          <MonitoringTab projectId={project._id} projectName={project.name} />
         </div>
       )}
 

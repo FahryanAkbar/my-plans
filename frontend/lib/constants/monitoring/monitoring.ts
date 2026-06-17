@@ -20,3 +20,22 @@ export const ENGINES = {
 export type Environment = (typeof ENVIRONMENTS)[keyof typeof ENVIRONMENTS]
 export type NetworkProfile = (typeof NETWORK_PROFILES)[keyof typeof NETWORK_PROFILES]
 export type Engine = (typeof ENGINES)[keyof typeof ENGINES]
+
+export const ENV_BADGE = {
+  PRODUCTION: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  STAGING: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  DEVELOPMENT: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+} as const;
+
+export const ENV_LABEL = {
+  PRODUCTION: 'Production',
+  STAGING: 'Staging',
+  DEVELOPMENT: 'Development',
+} as const;
+
+export const NETWORK_LABEL = {
+  WIFI: 'Wi-Fi / LAN',
+  NETWORK_4G: '4G LTE',
+  FAST_3G: 'Fast 3G',
+  NETWORK_3G: '3G Connection',
+} as const;

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 export type ProjectTab = 
   | 'overview'
   | 'members'
+  | 'monitoring'
   | 'settings'
 
 interface TabConfig {
@@ -28,6 +29,7 @@ export interface ProjectDetailTabsProps {
 const PROJECT_TABS: TabConfig[] = [
   { value: 'overview', label: 'Overview' },
   { value: 'members', label: 'Members' },
+  { value: 'monitoring', label: 'Monitoring' },
   { value: 'settings', label: 'Settings' },
 ]
 

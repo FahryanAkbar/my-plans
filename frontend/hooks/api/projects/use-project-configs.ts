@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 import { projectsService } from '@/services';
 import type { ApiError } from '@/lib';
@@ -10,7 +11,7 @@ import type {
 } from '@/types/features';
 
 
-export function useProjectConfigs(projectId: string) {
+export function useProjectConfigs(projectId: string, projectName?: string) {
   const [configs, setConfigs] = useState<MonitoringConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,31 @@ export function useProjectConfigs(projectId: string) {
       const data = await projectsService.findConfigsByProject(projectId);
       setConfigs(data);
     } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        try {
+          // Auto-register project on NestJS backend
+          await projectsService.createProject({
+            id: projectId,
+            name: projectName || 'Project',
+          });
+          // Retry fetching configs
+          const data = await projectsService.findConfigsByProject(projectId);
+          setConfigs(data);
+          return;
+        } catch (regErr) {
+          if (axios.isAxiosError(regErr) && regErr.response?.status === 409) {
+            // Harmless conflict (project already created concurrently). Retry fetching.
+            try {
+              const data = await projectsService.findConfigsByProject(projectId);
+              setConfigs(data);
+              return;
+            } catch (retryErr) {
+              console.error('Failed to fetch configs after 409 conflict:', retryErr);
+            }
+          }
+          console.error('Failed to auto-register project:', regErr);
+        }
+      }
       const apiErr = err as ApiError;
       const errMsg = apiErr?.message || 'Failed to fetch monitoring configs';
       setError(errMsg);
@@ -33,7 +59,7 @@ export function useProjectConfigs(projectId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, projectName]);
 
   const createConfig = useCallback(async (data: CreateMonitoringConfigRequest) => {
     if (!projectId) return;
@@ -44,6 +70,33 @@ export function useProjectConfigs(projectId: string) {
       toast.success('Monitoring config added successfully');
       return newConfig;
     } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        try {
+          // Auto-register project on NestJS backend
+          await projectsService.createProject({
+            id: projectId,
+            name: projectName || 'Project',
+          });
+          // Retry creating config
+          const newConfig = await projectsService.createConfig(projectId, data);
+          setConfigs((prev) => [...prev, newConfig]);
+          toast.success('Monitoring config added successfully');
+          return newConfig;
+        } catch (regErr) {
+          if (axios.isAxiosError(regErr) && regErr.response?.status === 409) {
+            // Harmless conflict (project already created concurrently). Retry creating.
+            try {
+              const newConfig = await projectsService.createConfig(projectId, data);
+              setConfigs((prev) => [...prev, newConfig]);
+              toast.success('Monitoring config added successfully');
+              return newConfig;
+            } catch (retryErr) {
+              console.error('Failed to create config after 409 conflict:', retryErr);
+            }
+          }
+          console.error('Failed to auto-register project on config creation:', regErr);
+        }
+      }
       const apiErr = err as ApiError;
       const errMsg = apiErr?.message || 'Failed to add monitoring config';
       toast.error(errMsg);
@@ -51,7 +104,7 @@ export function useProjectConfigs(projectId: string) {
     } finally {
       setIsCreating(false);
     }
-  }, [projectId]);
+  }, [projectId, projectName]);
 
   const updateConfig = useCallback(async (configId: string, data: UpdateMonitoringConfigRequest) => {
     if (!projectId) return;

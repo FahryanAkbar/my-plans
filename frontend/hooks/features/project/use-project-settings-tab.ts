@@ -9,6 +9,7 @@ import { Doc } from "@/convex/_generated/dataModel";
 import { ROLES, USER_POSITION } from "@/lib";
 import { useEdgeStore } from "@/lib/api/edgestore";
 import { isSafeFile, sanitizeHtml, stripHtml } from "@/lib/utils";
+import { projectsService } from "@/services";
 
 type ProjectSettingsForm = {
   name: string;
@@ -118,7 +119,17 @@ export const useProjectSettingsTab = (project: Doc<"projects">) => {
   const onDelete = React.useCallback(async () => {
     try {
       setIsPending(true);
+
+      // Delete from NestJS / PostgreSQL (safely catching errors in case it wasn't registered)
+      try {
+        await projectsService.removeProject(project._id);
+      } catch (err) {
+        console.error("Failed to delete project from NestJS backend:", err);
+      }
+
+      // Delete from Convex
       await remove({ id: project._id });
+      
       toast.success("Project deleted successfully");
       router.push("/project");
     } catch {
