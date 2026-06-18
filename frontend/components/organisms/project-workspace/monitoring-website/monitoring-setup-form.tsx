@@ -31,7 +31,7 @@ import {
 } from "@/components/molecules";
 
 import { useProjectConfigs } from "@/hooks";
-import { Environment, NetworkProfile } from "@/lib";
+import { Engine, Environment, NetworkProfile } from "@/lib";
 import { CreateMonitoringConfigRequest } from "@/types/features";
 
 // --- Form Values Interface ---
@@ -41,6 +41,7 @@ export interface MonitoringConfigValues {
   url: string;
   environment: Environment;
   interval: number;
+  engine: Engine;
   networkProfile: NetworkProfile;
   timeout: number;
   expectedStatus: number;
@@ -101,6 +102,15 @@ const NETWORK_PROFILE_OPTIONS = [
   { value: "NETWORK_3G", label: "3G Connection", desc: "Throttled 3G profile" },
 ] as const;
 
+const ENGINE_OPTIONS = [
+  { value: "HTTP", label: "HTTP", desc: "Fast latency and uptime checks" },
+  {
+    value: "PUPPETEER",
+    label: "Puppeteer",
+    desc: "Browser timing breakdown",
+  },
+] as const;
+
 const TIMEOUT_OPTIONS = [
   { value: 5000, label: "5 Seconds", desc: "Strict 5s timeout" },
   { value: 10000, label: "10 Seconds", desc: "Standard 10s timeout" },
@@ -136,6 +146,7 @@ function useMonitoringSetupForm({
   const [url, setUrl] = useState(initialValues?.url ?? "");
   const [environment, setEnvironment] = useState<Environment>(initialValues?.environment ?? "PRODUCTION");
   const [interval, setInterval] = useState<number>(initialValues?.interval ?? 60000);
+  const [engine, setEngine] = useState<Engine>(initialValues?.engine ?? "HTTP");
   const [networkProfile, setNetworkProfile] = useState<NetworkProfile>(initialValues?.networkProfile ?? "WIFI");
   const [timeout, setTimeout_] = useState<number>(initialValues?.timeout ?? 10000);
   const [expectedStatus, setExpectedStatus] = useState<number>(initialValues?.expectedStatus ?? 200);
@@ -159,9 +170,6 @@ function useMonitoringSetupForm({
       toast.error("URL must start with http:// or https://");
       return;
     }
-
-    // Auto-select engine based on network Profile
-    const engine = networkProfile === "WIFI" ? "HTTP" : "PUPPETEER";
 
     const payload: CreateMonitoringConfigRequest = {
       name,
@@ -193,6 +201,7 @@ function useMonitoringSetupForm({
     url,
     environment,
     interval,
+    engine,
     networkProfile,
     timeout,
     expectedStatus,
@@ -214,6 +223,8 @@ function useMonitoringSetupForm({
     setEnvironment,
     interval,
     setInterval,
+    engine,
+    setEngine,
     networkProfile,
     setNetworkProfile,
     timeout,
@@ -347,6 +358,8 @@ export const MonitoringSetupForm = ({
     setEnvironment,
     interval,
     setInterval,
+    engine,
+    setEngine,
     networkProfile,
     setNetworkProfile,
     timeout,
@@ -453,6 +466,14 @@ export const MonitoringSetupForm = ({
                   value={interval}
                   onValueChange={setInterval}
                   options={INTERVAL_OPTIONS}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper label="Monitoring Engine">
+                <DropdownSelect
+                  value={engine}
+                  onValueChange={setEngine}
+                  options={ENGINE_OPTIONS}
                 />
               </FieldWrapper>
 

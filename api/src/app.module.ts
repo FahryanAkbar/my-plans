@@ -50,4 +50,3 @@ import { SimulationModule } from './simulation/simulation.module';
   providers: [AppService],
 })
 export class AppModule {}
-

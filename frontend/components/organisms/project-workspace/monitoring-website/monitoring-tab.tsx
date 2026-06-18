@@ -344,6 +344,7 @@ export const MonitoringTab = ({
                   url: editTarget.url,
                   environment: editTarget.environment,
                   interval: editTarget.interval,
+                  engine: editTarget.engine,
                   networkProfile: editTarget.networkProfile,
                   timeout: editTarget.timeout,
                   expectedStatus: editTarget.expectedStatus,

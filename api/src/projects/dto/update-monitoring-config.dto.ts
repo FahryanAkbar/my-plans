@@ -1,4 +1,12 @@
-import { IsString, IsUrl, IsEnum, IsNumber, IsBoolean, IsOptional, Min } from 'class-validator';
+import {
+  IsString,
+  IsUrl,
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  Min,
+} from 'class-validator';
 import { Environment } from '../enums/environment.enum';
 import { NetworkProfile } from '../enums/network-profile.enum';
 import { Engine } from '../enums/engine.enum';

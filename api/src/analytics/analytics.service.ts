@@ -210,11 +210,14 @@ export class AnalyticsService implements OnModuleInit {
    */
   async getUptimeHistory(projectId: string, range: string = '30d') {
     // Validate range parameter to prevent Flux injection
-    const validRanges = ['24h', '7d', '30d'];
+    const validRanges = ['1h', '6h', '12h', '24h', '7d', '30d'];
     const cleanRange = validRanges.includes(range) ? range : '30d';
 
     // Map range to a reasonable aggregation window size
     const windowMap: Record<string, string> = {
+      '1h': '5m',
+      '6h': '15m',
+      '12h': '30m',
       '24h': '1h',
       '7d': '12h',
       '30d': '1d',
