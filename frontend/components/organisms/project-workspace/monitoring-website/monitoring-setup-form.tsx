@@ -132,32 +132,16 @@ function useMonitoringSetupForm({
   const { createConfig, updateConfig, isCreating, isUpdating } =
     useProjectConfigs(projectId);
 
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [environment, setEnvironment] = useState<Environment>(
-    "PRODUCTION",
-  );
-  const [interval, setInterval] = useState<number>(60000);
-  const [networkProfile, setNetworkProfile] = useState<NetworkProfile>(
-    "WIFI",
-  );
-  const [timeout, setTimeout_] = useState<number>(10000);
-  const [expectedStatus, setExpectedStatus] = useState<number>(200);
-  const [checkSsl, setCheckSsl] = useState<boolean>(true);
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [url, setUrl] = useState(initialValues?.url ?? "");
+  const [environment, setEnvironment] = useState<Environment>(initialValues?.environment ?? "PRODUCTION");
+  const [interval, setInterval] = useState<number>(initialValues?.interval ?? 60000);
+  const [networkProfile, setNetworkProfile] = useState<NetworkProfile>(initialValues?.networkProfile ?? "WIFI");
+  const [timeout, setTimeout_] = useState<number>(initialValues?.timeout ?? 10000);
+  const [expectedStatus, setExpectedStatus] = useState<number>(initialValues?.expectedStatus ?? 200);
+  const [checkSsl, setCheckSsl] = useState<boolean>(initialValues?.checkSsl ?? true);
 
-  const [prevInitialValues, setPrevInitialValues] = useState(initialValues);
 
-  if (initialValues !== prevInitialValues) {
-    setPrevInitialValues(initialValues);
-    if (initialValues?.name !== undefined) setName(initialValues.name);
-    if (initialValues?.url !== undefined) setUrl(initialValues.url);
-    if (initialValues?.environment !== undefined) setEnvironment(initialValues.environment);
-    if (initialValues?.interval !== undefined) setInterval(initialValues.interval);
-    if (initialValues?.networkProfile !== undefined) setNetworkProfile(initialValues.networkProfile);
-    if (initialValues?.timeout !== undefined) setTimeout_(initialValues.timeout);
-    if (initialValues?.expectedStatus !== undefined) setExpectedStatus(initialValues.expectedStatus);
-    if (initialValues?.checkSsl !== undefined) setCheckSsl(initialValues.checkSsl);
-  }
 
   const isEdit = !!configId;
   const isPending = isCreating || isUpdating;

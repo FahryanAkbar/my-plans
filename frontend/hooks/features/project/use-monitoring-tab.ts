@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+
 import { useProjectConfigs } from '@/hooks';
 import type { MonitoringConfig } from '@/types/features';
 
@@ -66,9 +67,6 @@ export function useMonitoringTab({ projectId, projectName }: UseMonitoringTabPro
 
   const handleSoftDelete = useCallback(async (config: MonitoringConfig) => {
     try {
-      // Archive is done by setting enabled: false or a custom state if available.
-      // Since isArchived is a Postgres property, we pass it to show it in archived list.
-      // UpdateMonitoringConfigRequest has no strict types on other fields so we cast it safely.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await updateConfig(config.id, { isArchived: true, enabled: false } as any);
       setSelected((prev) => {

@@ -5,13 +5,10 @@ import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib";
 import {
-  AlertCircle,
-  CheckCircle2,
   ChevronDown,
   Edit2,
   Globe,
   PlusCircle,
-  Power,
   Trash,
   Trash2,
   X,
@@ -33,22 +30,18 @@ import {
   Typography,
 } from "@/components/atoms";
 import { MonitoringSetupForm } from "./monitoring-setup-form";
-import {
-  ENV_BADGE,
-  ENV_LABEL,
-  NETWORK_LABEL,
-} from "@/lib/constants";
+import { ENV_BADGE, ENV_LABEL, NETWORK_LABEL } from "@/lib";
 import { useMonitoringTab } from "@/hooks";
-import type { MonitoringConfig } from "@/types/features/monitoring/projects";
+import { MonitoringConfig } from "@/types/features";
 
 interface ConfigRowProps {
-  config:     MonitoringConfig;
-  selected:   boolean;
-  onSelect:   (id: string, checked: boolean) => void;
-  onEdit:     (config: MonitoringConfig) => void;
-  onToggle:   (config: MonitoringConfig) => void;
-  onSoftDel:  (config: MonitoringConfig) => void;
-  onHardDel:  (config: MonitoringConfig) => void;
+  config: MonitoringConfig;
+  selected: boolean;
+  onSelect: (id: string, checked: boolean) => void;
+  onEdit: (config: MonitoringConfig) => void;
+  onToggle: (config: MonitoringConfig) => void;
+  onSoftDel: (config: MonitoringConfig) => void;
+  onHardDel: (config: MonitoringConfig) => void;
 }
 
 const ConfigRow = ({
@@ -67,7 +60,7 @@ const ConfigRow = ({
       className={cn(
         "group flex flex-col justify-between rounded-xl border p-4 transition-all duration-300",
         "bg-card border-border hover:border-border/80 hover:shadow-md",
-        selected ? "border-primary/30 bg-primary/5" : "bg-card"
+        selected ? "border-primary/30 bg-primary/5" : "bg-card",
       )}
     >
       {/* Card Body */}
@@ -84,18 +77,31 @@ const ConfigRow = ({
             href={`/project/${config.projectId}/monitoring-website?configId=${config.id}`}
             className="flex items-start gap-3 cursor-pointer hover:opacity-80 transition-opacity group/link"
           >
-            <div className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/50 transition-all duration-300",
-              config.enabled ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 group-hover/link:bg-emerald-500/25 group-hover/link:text-emerald-600" : "bg-muted/50 text-muted-foreground/40"
-            )}>
+            <div
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/50 transition-all duration-300",
+                config.enabled
+                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 group-hover/link:bg-emerald-500/25 group-hover/link:text-emerald-600"
+                  : "bg-muted/50 text-muted-foreground/40",
+              )}
+            >
               <Globe className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-1.5">
-                <Typography variant="span" className="text-sm font-semibold text-foreground/90 truncate block group-hover/link:text-primary transition-colors" title={config.name}>
+                <Typography
+                  variant="span"
+                  className="text-sm font-semibold text-foreground/90 truncate block group-hover/link:text-primary transition-colors"
+                  title={config.name}
+                >
                   {config.name}
                 </Typography>
-                <Badge className={cn("text-[9px] px-1.5 py-0.5 font-bold uppercase tracking-wider shrink-0", ENV_BADGE[config.environment])}>
+                <Badge
+                  className={cn(
+                    "text-[9px] px-1.5 py-0.5 font-bold uppercase tracking-wider shrink-0",
+                    ENV_BADGE[config.environment],
+                  )}
+                >
                   {ENV_LABEL[config.environment] ?? config.environment}
                 </Badge>
                 {!config.enabled && (
@@ -104,7 +110,11 @@ const ConfigRow = ({
                   </Badge>
                 )}
               </div>
-              <Typography variant="caption" className="block truncate text-xs text-muted-foreground/60 group-hover/link:underline" title={config.url}>
+              <Typography
+                variant="caption"
+                className="block truncate text-xs text-muted-foreground/60 group-hover/link:underline"
+                title={config.url}
+              >
                 {config.url}
               </Typography>
             </div>
@@ -118,7 +128,12 @@ const ConfigRow = ({
               onClick={() => setOpen((v) => !v)}
               className="h-auto p-0 flex items-center gap-1 text-[10px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-transparent transition-colors"
             >
-              <ChevronDown className={cn("h-3 w-3 transition-transform duration-300", open && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 transition-transform duration-300",
+                  open && "rotate-180",
+                )}
+              />
               {open ? "Hide Details" : "Show Details"}
             </Button>
           </div>
@@ -127,18 +142,32 @@ const ConfigRow = ({
           {open && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-2.5 border-t border-border/40 animate-in fade-in slide-in-from-top-1 duration-200">
               {[
-                { label: "Interval",    value: `${config.interval / 1000 / 60} min` },
-                { label: "Network",     value: NETWORK_LABEL[config.networkProfile] ?? config.networkProfile },
-                { label: "Timeout",     value: `${config.timeout} ms`            },
-                { label: "Expect HTTP", value: `${config.expectedStatus}`        },
-                { label: "SSL Check",   value: config.checkSsl ? "Yes" : "No"   },
-                { label: "Engine",      value: config.engine                     },
+                {
+                  label: "Interval",
+                  value: `${config.interval / 1000 / 60} min`,
+                },
+                {
+                  label: "Network",
+                  value:
+                    NETWORK_LABEL[config.networkProfile] ??
+                    config.networkProfile,
+                },
+                { label: "Timeout", value: `${config.timeout} ms` },
+                { label: "Expect HTTP", value: `${config.expectedStatus}` },
+                { label: "SSL Check", value: config.checkSsl ? "Yes" : "No" },
+                { label: "Engine", value: config.engine },
               ].map(({ label, value }) => (
                 <div key={label} className="space-y-0.5">
-                  <Typography variant="caption" className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40 block">
+                  <Typography
+                    variant="caption"
+                    className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40 block"
+                  >
                     {label}
                   </Typography>
-                  <Typography variant="caption" className="text-[11px] font-semibold text-foreground/75 block truncate">
+                  <Typography
+                    variant="caption"
+                    className="text-[11px] font-semibold text-foreground/75 block truncate"
+                  >
                     {value}
                   </Typography>
                 </div>
@@ -158,7 +187,10 @@ const ConfigRow = ({
             title={config.enabled ? "Pause monitoring" : "Resume monitoring"}
             id={`switch-${config.id}`}
           />
-          <Typography variant="caption" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+          <Typography
+            variant="caption"
+            className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60"
+          >
             {config.enabled ? "Active" : "Paused"}
           </Typography>
         </div>
@@ -190,12 +222,16 @@ const ConfigRow = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>Archive monitoring config?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will pause and archive <strong>{config.name}</strong>. Data is preserved and the config can be restored.
+                  This will pause and archive <strong>{config.name}</strong>.
+                  Data is preserved and the config can be restored.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onSoftDel(config)} className="bg-amber-500 hover:bg-amber-600">
+                <AlertDialogAction
+                  onClick={() => onSoftDel(config)}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
                   Archive
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -217,12 +253,16 @@ const ConfigRow = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete <strong>{config.name}</strong> and all its metrics. This action cannot be undone.
+                  This will permanently delete <strong>{config.name}</strong>{" "}
+                  and all its metrics. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onHardDel(config)} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction
+                  onClick={() => onHardDel(config)}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -239,7 +279,10 @@ interface MonitoringTabProps {
   projectName?: string;
 }
 
-export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) => {
+export const MonitoringTab = ({
+  projectId,
+  projectName,
+}: MonitoringTabProps) => {
   const {
     configs,
     view,
@@ -263,7 +306,10 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
     return (
       <div className="flex flex-col gap-3">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/30 border border-border/30" />
+          <div
+            key={i}
+            className="h-20 animate-pulse rounded-xl bg-muted/30 border border-border/30"
+          />
         ))}
       </div>
     );
@@ -273,21 +319,22 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCancel}
-          >
+          <Button variant="ghost" size="sm" onClick={handleCancel}>
             <X className="h-4 w-4" />
             Cancel
           </Button>
-          <Typography variant="span" className="text-muted-foreground/40">|</Typography>
+          <Typography variant="span" className="text-muted-foreground/40">
+            |
+          </Typography>
           <Typography variant="h6" className="text-sm font-semibold">
-            {view === "edit" ? "Edit Configuration" : "New Monitoring Configuration"}
+            {view === "edit"
+              ? "Edit Configuration"
+              : "New Monitoring Configuration"}
           </Typography>
         </div>
 
         <MonitoringSetupForm
+          key={editTarget?.id ?? 'new'}
           projectId={projectId}
           configId={editTarget?.id}
           initialValues={
@@ -311,20 +358,25 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
     );
   }
 
-  const activeCount  = configs.filter((c) => c.enabled).length;
-  const totalCount   = configs.length;
-  const allSelected  = totalCount > 0 && selected.size === totalCount;
+  const activeCount = configs.filter((c) => c.enabled).length;
+  const totalCount = configs.length;
+  const allSelected = totalCount > 0 && selected.size === totalCount;
   const someSelected = selected.size > 0 && selected.size < totalCount;
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-400">
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <Typography variant="h6" className="text-sm font-semibold text-foreground">
+          <Typography
+            variant="h6"
+            className="text-sm font-semibold text-foreground"
+          >
             Monitoring Configurations
           </Typography>
-          <Typography variant="caption" className="text-xs text-muted-foreground/70 block">
+          <Typography
+            variant="caption"
+            className="text-xs text-muted-foreground/70 block"
+          >
             {totalCount === 0
               ? "No configurations yet."
               : `${activeCount} active · ${totalCount} total`}
@@ -344,7 +396,10 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
 
       {selected.size > 0 && (
         <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2 shadow-xs">
-          <Typography variant="span" className="text-xs font-medium text-muted-foreground">
+          <Typography
+            variant="span"
+            className="text-xs font-medium text-muted-foreground"
+          >
             {selected.size} selected
           </Typography>
           <div className="flex items-center gap-1.5">
@@ -370,9 +425,12 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete {selected.size} configuration(s)?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    Delete {selected.size} configuration(s)?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    All selected monitoring configurations and their metrics will be permanently deleted. This action cannot be undone.
+                    All selected monitoring configurations and their metrics
+                    will be permanently deleted. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -396,11 +454,18 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
             <Globe className="h-6 w-6" />
           </div>
           <div className="space-y-1">
-            <Typography variant="largeText" className="text-sm font-semibold text-foreground/70 block">
+            <Typography
+              variant="largeText"
+              className="text-sm font-semibold text-foreground/70 block"
+            >
               No monitoring configured
             </Typography>
-            <Typography variant="caption" className="text-xs text-muted-foreground/60 block">
-              Add a configuration to start monitoring your website uptime and performance.
+            <Typography
+              variant="caption"
+              className="text-xs text-muted-foreground/60 block"
+            >
+              Add a configuration to start monitoring your website uptime and
+              performance.
             </Typography>
           </div>
           <Button onClick={() => setView("create")} size="sm" className="gap-2">
@@ -440,25 +505,6 @@ export const MonitoringTab = ({ projectId, projectName }: MonitoringTabProps) =>
         </div>
       )}
 
-      {/* ── Status summary ── */}
-      {totalCount > 0 && (
-        <div className="flex flex-wrap gap-4 rounded-lg border border-border/30 bg-muted/10 px-5 py-3.5 text-xs">
-          <div className="flex items-center gap-1.5 text-emerald-600">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            <Typography variant="span" className="font-semibold">{activeCount}</Typography>
-            <Typography variant="span" className="text-muted-foreground/70">active</Typography>
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground/60">
-            <AlertCircle className="h-3.5 w-3.5" />
-            <Typography variant="span" className="font-semibold">{totalCount - activeCount}</Typography>
-            <Typography variant="span">paused</Typography>
-          </div>
-          <div className="ml-auto flex items-center gap-1.5 text-muted-foreground/60">
-            <Power className="h-3.5 w-3.5" />
-            <Typography variant="span">{totalCount} total</Typography>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
