@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
 import { analyticsService } from '@/services';
 import type { ApiError } from '@/lib';
 import type { AnalyticsRange, LatencyHistoryResponse } from '@/types/features';
 
-/**
- * Hook for fetching latency history series of a project's target configs.
- */
+
 export function useLatencyHistory(projectId: string, range?: AnalyticsRange) {
   const [data, setData] = useState<LatencyHistoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

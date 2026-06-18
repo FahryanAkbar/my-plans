@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
 import { analyticsService } from '@/services';
 import type { ApiError } from '@/lib';
 import type { AnalyticsRange, UptimeStatsResponse } from '@/types/features';
 
-/**
- * Hook for fetching aggregated uptime stats (percentages, success/failure counts).
- */
+
 export function useUptimeStats(projectId: string, range?: AnalyticsRange) {
   const [stats, setStats] = useState<UptimeStatsResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
