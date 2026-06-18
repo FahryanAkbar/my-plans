@@ -1,9 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-  MonitoringService,
-  WorkerStatus,
-  HealthStatus,
-} from './monitoring.service';
+import { HealthStatus } from './entities/health-status.entity';
+import { WorkerStatus } from './entities/worker-status.entity';
+import { MonitoringService } from './monitoring.service';
 
 @Controller('monitoring')
 export class MonitoringController {
