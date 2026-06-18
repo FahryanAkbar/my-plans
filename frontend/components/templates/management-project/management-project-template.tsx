@@ -14,6 +14,7 @@ import {
   TaskData,
   OverviewProjectTracker,
   ProjectRowProps,
+  SystemStatusPanel,
 } from "@/components/organisms";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -64,6 +65,8 @@ export const ManagementProjectTemplate = ({
                 />
               }
             />
+
+            <SystemStatusPanel />
             
             <OverviewStats projectId={projectId} />
             
