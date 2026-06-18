@@ -25,13 +25,14 @@ const UPTIME_RANGES: { label: string; value: AnalyticsRange; description: string
 export interface UptimeChartsProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
-export function UptimeCharts({ className, projectId }: UptimeChartsProps) {
+export function UptimeCharts({ className, projectId, configId }: UptimeChartsProps) {
   const [range, setRange] = React.useState<AnalyticsRange>("24h");
   const [activeConfigId, setActiveConfigId] = React.useState<string | null>(null);
-  const { stats, isLoading, error } = useUptimeStats(projectId, range);
-  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId);
+  const { stats, isLoading, error } = useUptimeStats(projectId, range, configId);
+  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId, undefined, configId);
   const activeRange = UPTIME_RANGES.find((item) => item.value === range) ?? UPTIME_RANGES[3];
   const activeConfigIds = React.useMemo(
     () => new Set(configs.filter((config) => config.enabled && !config.isArchived).map((config) => config.id)),
@@ -39,8 +40,8 @@ export function UptimeCharts({ className, projectId }: UptimeChartsProps) {
   );
   const visibleStats = React.useMemo(() => {
     if (activeConfigIds.size === 0) return [];
-    return stats.filter((item) => activeConfigIds.has(item.configId));
-  }, [activeConfigIds, stats]);
+    return stats.filter((item) => activeConfigIds.has(item.configId) && (!configId || item.configId === configId));
+  }, [activeConfigIds, configId, stats]);
 
   React.useEffect(() => {
     if (!visibleStats || visibleStats.length === 0) {

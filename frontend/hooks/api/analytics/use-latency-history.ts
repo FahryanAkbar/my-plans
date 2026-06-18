@@ -7,7 +7,7 @@ import type { AnalyticsRange, LatencyHistoryResponse } from '@/types/features';
 import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../polling';
 
 
-export function useLatencyHistory(projectId: string, range?: AnalyticsRange) {
+export function useLatencyHistory(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [data, setData] = useState<LatencyHistoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -23,7 +23,7 @@ export function useLatencyHistory(projectId: string, range?: AnalyticsRange) {
     }
     setError(null);
     try {
-      const result = await analyticsService.getLatencyHistory(projectId, range);
+      const result = await analyticsService.getLatencyHistory(projectId, range, configId);
       setData(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -39,7 +39,7 @@ export function useLatencyHistory(projectId: string, range?: AnalyticsRange) {
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchLatency();

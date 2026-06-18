@@ -11,7 +11,7 @@ import type {
 } from '@/types/features';
 
 
-export function useProjectConfigs(projectId: string, projectName?: string) {
+export function useProjectConfigs(projectId: string, projectName?: string, configId?: string) {
   const [configs, setConfigs] = useState<MonitoringConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +24,12 @@ export function useProjectConfigs(projectId: string, projectName?: string) {
     setIsLoading(true);
     setError(null);
     try {
+      if (configId) {
+        const data = await projectsService.findOneConfig(projectId, configId);
+        setConfigs([data]);
+        return;
+      }
+
       const data = await projectsService.findConfigsByProject(projectId);
       setConfigs(data);
     } catch (err: unknown) {
@@ -35,15 +41,25 @@ export function useProjectConfigs(projectId: string, projectName?: string) {
             name: projectName || 'Project',
           });
           // Retry fetching configs
-          const data = await projectsService.findConfigsByProject(projectId);
-          setConfigs(data);
+          if (configId) {
+            const data = await projectsService.findOneConfig(projectId, configId);
+            setConfigs([data]);
+          } else {
+            const data = await projectsService.findConfigsByProject(projectId);
+            setConfigs(data);
+          }
           return;
         } catch (regErr) {
           if (axios.isAxiosError(regErr) && regErr.response?.status === 409) {
             // Harmless conflict (project already created concurrently). Retry fetching.
             try {
-              const data = await projectsService.findConfigsByProject(projectId);
-              setConfigs(data);
+              if (configId) {
+                const data = await projectsService.findOneConfig(projectId, configId);
+                setConfigs([data]);
+              } else {
+                const data = await projectsService.findConfigsByProject(projectId);
+                setConfigs(data);
+              }
               return;
             } catch (retryErr) {
               console.error('Failed to fetch configs after 409 conflict:', retryErr);
@@ -59,7 +75,7 @@ export function useProjectConfigs(projectId: string, projectName?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, projectName]);
+  }, [projectId, projectName, configId]);
 
   const createConfig = useCallback(async (data: CreateMonitoringConfigRequest) => {
     if (!projectId) return;

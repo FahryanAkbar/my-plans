@@ -37,13 +37,14 @@ const TIMING_SEGMENTS: {
 export interface TimingBreakdownProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
-export function TimingBreakdown({ className, projectId }: TimingBreakdownProps) {
+export function TimingBreakdown({ className, projectId, configId }: TimingBreakdownProps) {
   const [range, setRange] = React.useState<AnalyticsRange>("24h");
   const [activeConfigId, setActiveConfigId] = React.useState<string | null>(null);
-  const { breakdown, isLoading, error } = useTimingBreakdown(projectId, range);
-  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId);
+  const { breakdown, isLoading, error } = useTimingBreakdown(projectId, range, configId);
+  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId, undefined, configId);
   const activeRange = TIMING_RANGES.find((item) => item.value === range) ?? TIMING_RANGES[3];
   const activeConfigIds = React.useMemo(
     () => new Set(configs.filter((config) => config.enabled && !config.isArchived).map((config) => config.id)),
@@ -51,8 +52,8 @@ export function TimingBreakdown({ className, projectId }: TimingBreakdownProps) 
   );
   const visibleBreakdown = React.useMemo(() => {
     if (activeConfigIds.size === 0) return [];
-    return breakdown.filter((item) => activeConfigIds.has(item.configId));
-  }, [activeConfigIds, breakdown]);
+    return breakdown.filter((item) => activeConfigIds.has(item.configId) && (!configId || item.configId === configId));
+  }, [activeConfigIds, breakdown, configId]);
 
   React.useEffect(() => {
     if (!visibleBreakdown || visibleBreakdown.length === 0) {

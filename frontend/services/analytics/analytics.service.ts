@@ -13,11 +13,12 @@ export const analyticsService = {
   async getLatencyHistory(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<LatencyHistoryResponse[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<LatencyHistoryResponse[]>(
       projectApi.ANALYTICS.LATENCY,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },
@@ -25,11 +26,12 @@ export const analyticsService = {
   async getUptimeStats(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<UptimeStatsResponse[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<UptimeStatsResponse[]>(
       projectApi.ANALYTICS.UPTIME,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },
@@ -37,11 +39,12 @@ export const analyticsService = {
   async getDowntimeHistory(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<DowntimeEvent[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<DowntimeEvent[]>(
       projectApi.ANALYTICS.DOWNTIME_HISTORY,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },
@@ -49,11 +52,12 @@ export const analyticsService = {
   async getUptimeHistory(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<UptimeHistoryResponse[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<UptimeHistoryResponse[]>(
       projectApi.ANALYTICS.UPTIME_HISTORY,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },
@@ -61,11 +65,12 @@ export const analyticsService = {
   async getTimingBreakdown(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<TimingBreakdownResponse[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<TimingBreakdownResponse[]>(
       projectApi.ANALYTICS.TIMING_BREAKDOWN,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },

@@ -25,13 +25,14 @@ const DOWNTIME_RANGES: { label: string; value: AnalyticsRange; description: stri
 export interface DowntimeHistoryProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
-export function DowntimeHistory({ className, projectId }: DowntimeHistoryProps) {
+export function DowntimeHistory({ className, projectId, configId }: DowntimeHistoryProps) {
   const [range, setRange] = React.useState<AnalyticsRange>("7d");
   const [activeConfigId, setActiveConfigId] = React.useState<string | null>(null);
-  const { events, isLoading, error } = useDowntimeHistory(projectId, range);
-  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId);
+  const { events, isLoading, error } = useDowntimeHistory(projectId, range, configId);
+  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId, undefined, configId);
   const activeRange = DOWNTIME_RANGES.find((item) => item.value === range) ?? DOWNTIME_RANGES[4];
   const activeConfigIds = React.useMemo(
     () => new Set(configs.filter((config) => config.enabled && !config.isArchived).map((config) => config.id)),
@@ -40,9 +41,9 @@ export function DowntimeHistory({ className, projectId }: DowntimeHistoryProps) 
   const visibleEvents = React.useMemo(() => {
     if (activeConfigIds.size === 0) return [];
     return events
-      .filter((event) => activeConfigIds.has(event.configId))
+      .filter((event) => activeConfigIds.has(event.configId) && (!configId || event.configId === configId))
       .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
-  }, [activeConfigIds, events]);
+  }, [activeConfigIds, events, configId]);
   const configOptions = React.useMemo(() => {
     const uniqueConfigs = new Map<string, string>();
     visibleEvents.forEach((event) => uniqueConfigs.set(event.configId, event.url));

@@ -7,7 +7,7 @@ import type { AnalyticsRange, UptimeStatsResponse } from '@/types/features';
 import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../polling';
 
 
-export function useUptimeStats(projectId: string, range?: AnalyticsRange) {
+export function useUptimeStats(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [stats, setStats] = useState<UptimeStatsResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -23,7 +23,7 @@ export function useUptimeStats(projectId: string, range?: AnalyticsRange) {
     }
     setError(null);
     try {
-      const result = await analyticsService.getUptimeStats(projectId, range);
+      const result = await analyticsService.getUptimeStats(projectId, range, configId);
       setStats(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -39,7 +39,7 @@ export function useUptimeStats(projectId: string, range?: AnalyticsRange) {
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchStats();

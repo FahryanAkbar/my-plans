@@ -8,7 +8,7 @@ import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../pollin
 /**
  * Hook for fetching average connection timing breakdown (DNS, TCP, TLS, TTFB, Download).
  */
-export function useTimingBreakdown(projectId: string, range?: AnalyticsRange) {
+export function useTimingBreakdown(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [breakdown, setBreakdown] = useState<TimingBreakdownResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -24,7 +24,7 @@ export function useTimingBreakdown(projectId: string, range?: AnalyticsRange) {
     }
     setError(null);
     try {
-      const result = await analyticsService.getTimingBreakdown(projectId, range);
+      const result = await analyticsService.getTimingBreakdown(projectId, range, configId);
       setBreakdown(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -40,7 +40,7 @@ export function useTimingBreakdown(projectId: string, range?: AnalyticsRange) {
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchBreakdown();

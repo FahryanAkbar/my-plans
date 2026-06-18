@@ -5,11 +5,12 @@ export const simulationService = {
   async getLatencyComparison(
     projectId: string,
     range?: AnalyticsRange,
+    configId?: string,
   ): Promise<LatencyComparisonResponse[]> {
     const projectApi = getProjectEndpoints(projectId);
     const response = await http.get<LatencyComparisonResponse[]>(
       projectApi.SIMULATION.LATENCY_COMPARISON,
-      { params: { range } }
+      { params: { range, configId } }
     );
     return response.data;
   },

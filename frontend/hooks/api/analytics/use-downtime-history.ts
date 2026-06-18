@@ -8,7 +8,7 @@ import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../pollin
 /**
  * Hook for fetching recent downtime and failure incidents log.
  */
-export function useDowntimeHistory(projectId: string, range?: AnalyticsRange) {
+export function useDowntimeHistory(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [events, setEvents] = useState<DowntimeEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -24,7 +24,7 @@ export function useDowntimeHistory(projectId: string, range?: AnalyticsRange) {
     }
     setError(null);
     try {
-      const result = await analyticsService.getDowntimeHistory(projectId, range);
+      const result = await analyticsService.getDowntimeHistory(projectId, range, configId);
       setEvents(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -40,7 +40,7 @@ export function useDowntimeHistory(projectId: string, range?: AnalyticsRange) {
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchDowntime();

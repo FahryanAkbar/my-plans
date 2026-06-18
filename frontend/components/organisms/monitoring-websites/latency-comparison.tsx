@@ -28,11 +28,16 @@ import { normalizeComparisonData } from "@/lib";
 export interface LatencyComparisonProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
 
-export function LatencyComparison({ className, projectId }: LatencyComparisonProps) {
-  const { data, isLoading, error } = useLatencyComparison(projectId);
+export function LatencyComparison({ className, projectId, configId }: LatencyComparisonProps) {
+  const { data, isLoading, error } = useLatencyComparison(projectId, undefined, configId);
+  const visibleData = React.useMemo(
+    () => data.filter((item) => !configId || item.configId === configId),
+    [configId, data],
+  );
 
   if (isLoading) {
     return <MonitoringSkeletonLoading className={className} />;
@@ -50,7 +55,7 @@ export function LatencyComparison({ className, projectId }: LatencyComparisonPro
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!visibleData || visibleData.length === 0) {
     return (
       <MonitoringEmptyState
         className={className}
@@ -63,7 +68,7 @@ export function LatencyComparison({ className, projectId }: LatencyComparisonPro
   }
 
   const { sortedData, minTime, maxTime, ticks, maxYDomain } =
-    normalizeComparisonData(data);
+    normalizeComparisonData(visibleData);
 
   if (sortedData.length === 0) {
     return (

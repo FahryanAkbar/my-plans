@@ -10,7 +10,7 @@ import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../pollin
  * Hook for fetching latency comparison metrics (Real vs Predicted Latency).
  * Commonly used for rendering the simulation dual line chart.
  */
-export function useLatencyComparison(projectId: string, range?: AnalyticsRange) {
+export function useLatencyComparison(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [data, setData] = useState<LatencyComparisonResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -26,7 +26,7 @@ export function useLatencyComparison(projectId: string, range?: AnalyticsRange) 
     }
     setError(null);
     try {
-      const result = await simulationService.getLatencyComparison(projectId, range);
+      const result = await simulationService.getLatencyComparison(projectId, range, configId);
       setData(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -42,7 +42,7 @@ export function useLatencyComparison(projectId: string, range?: AnalyticsRange) 
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchComparison();

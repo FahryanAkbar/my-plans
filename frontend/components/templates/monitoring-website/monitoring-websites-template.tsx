@@ -14,11 +14,13 @@ import {
 
 export interface MonitoringWebsitesTemplateProps {
   projectId: string;
+  configId?: string;
   className?: string;
 }
 
 export function MonitoringWebsitesTemplate({
   projectId,
+  configId,
   className,
 }: MonitoringWebsitesTemplateProps) {
   return (
@@ -28,12 +30,12 @@ export function MonitoringWebsitesTemplate({
         className,
       )}
     >
-      <LatencyCharts projectId={projectId} />
-      <TimingBreakdown projectId={projectId} />
-      <UptimeCharts projectId={projectId} />
-      <DowntimeHistory projectId={projectId} />
-      <UptimeHistoryCharts projectId={projectId} />
-      <LatencyComparison projectId={projectId} />
+      <LatencyCharts projectId={projectId} configId={configId} />
+      <TimingBreakdown projectId={projectId} configId={configId} />
+      <UptimeCharts projectId={projectId} configId={configId} />
+      <DowntimeHistory projectId={projectId} configId={configId} />
+      <UptimeHistoryCharts projectId={projectId} configId={configId} />
+      <LatencyComparison projectId={projectId} configId={configId} />
     </div>
   );
 }

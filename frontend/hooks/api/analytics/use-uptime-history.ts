@@ -8,7 +8,7 @@ import { MONITORING_POLL_INTERVAL_MS, shouldSkipBackgroundPoll } from '../pollin
 /**
  * Hook for fetching historical uptime percentage trend over time.
  */
-export function useUptimeHistory(projectId: string, range?: AnalyticsRange) {
+export function useUptimeHistory(projectId: string, range?: AnalyticsRange, configId?: string) {
   const [trend, setTrend] = useState<UptimeHistoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -24,7 +24,7 @@ export function useUptimeHistory(projectId: string, range?: AnalyticsRange) {
     }
     setError(null);
     try {
-      const result = await analyticsService.getUptimeHistory(projectId, range);
+      const result = await analyticsService.getUptimeHistory(projectId, range, configId);
       setTrend(result);
     } catch (err: unknown) {
       const apiErr = err as ApiError;
@@ -40,7 +40,7 @@ export function useUptimeHistory(projectId: string, range?: AnalyticsRange) {
         setIsLoading(false);
       }
     }
-  }, [projectId, range]);
+  }, [projectId, range, configId]);
 
   useEffect(() => {
     fetchUptimeHistory();

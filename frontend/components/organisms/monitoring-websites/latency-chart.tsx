@@ -38,13 +38,14 @@ const CONFIG_COLORS = ["#4f46e5", "#0f766e", "#f97316", "#be123c", "#7c3aed", "#
 export interface LatencyChartsProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
-export function LatencyCharts({ className, projectId }: LatencyChartsProps) {
+export function LatencyCharts({ className, projectId, configId }: LatencyChartsProps) {
   const [range, setRange] = React.useState<AnalyticsRange>("1h");
   const [activeConfigId, setActiveConfigId] = React.useState<string | null>(null);
-  const { data, isLoading, error } = useLatencyHistory(projectId, range);
-  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId);
+  const { data, isLoading, error } = useLatencyHistory(projectId, range, configId);
+  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId, undefined, configId);
   const activeRange = LATENCY_RANGES.find((item) => item.value === range) ?? LATENCY_RANGES[0];
   const activeConfigIds = React.useMemo(
     () => new Set(configs.filter((config) => config.enabled && !config.isArchived).map((config) => config.id)),
@@ -52,8 +53,8 @@ export function LatencyCharts({ className, projectId }: LatencyChartsProps) {
   );
   const visibleData = React.useMemo(() => {
     if (activeConfigIds.size === 0) return [];
-    return data.filter((item) => activeConfigIds.has(item.configId));
-  }, [activeConfigIds, data]);
+    return data.filter((item) => activeConfigIds.has(item.configId) && (!configId || item.configId === configId));
+  }, [activeConfigIds, configId, data]);
 
   React.useEffect(() => {
     if (!visibleData || visibleData.length === 0) {

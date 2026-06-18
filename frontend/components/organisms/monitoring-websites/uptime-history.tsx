@@ -36,13 +36,14 @@ const UPTIME_HISTORY_RANGES: { label: string; value: AnalyticsRange; description
 export interface UptimeHistoryChartsProps {
   className?: string;
   projectId: string;
+  configId?: string;
 }
 
-export function UptimeHistoryCharts({ className, projectId }: UptimeHistoryChartsProps) {
+export function UptimeHistoryCharts({ className, projectId, configId }: UptimeHistoryChartsProps) {
   const [range, setRange] = React.useState<AnalyticsRange>("30d");
   const [activeConfigId, setActiveConfigId] = React.useState<string | null>(null);
-  const { trend, isLoading, error } = useUptimeHistory(projectId, range);
-  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId);
+  const { trend, isLoading, error } = useUptimeHistory(projectId, range, configId);
+  const { configs, isLoading: isConfigsLoading } = useProjectConfigs(projectId, undefined, configId);
   const activeRange =
     UPTIME_HISTORY_RANGES.find((item) => item.value === range) ?? UPTIME_HISTORY_RANGES[5];
   const activeConfigIds = React.useMemo(
@@ -51,8 +52,8 @@ export function UptimeHistoryCharts({ className, projectId }: UptimeHistoryChart
   );
   const visibleTrend = React.useMemo(() => {
     if (activeConfigIds.size === 0) return [];
-    return trend.filter((item) => activeConfigIds.has(item.configId));
-  }, [activeConfigIds, trend]);
+    return trend.filter((item) => activeConfigIds.has(item.configId) && (!configId || item.configId === configId));
+  }, [activeConfigIds, configId, trend]);
   const shouldShowTimeTicks = range === "1h" || range === "6h" || range === "12h" || range === "24h";
 
   React.useEffect(() => {
