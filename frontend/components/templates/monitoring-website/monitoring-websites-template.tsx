@@ -4,6 +4,9 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
   LatencyCharts,
+  DowntimeHistory,
+  TimingBreakdown,
+  UptimeCharts,
   UptimeHistoryCharts,
   LatencyComparison,
 } from "@/components/organisms";
@@ -26,6 +29,9 @@ export function MonitoringWebsitesTemplate({
       )}
     >
       <LatencyCharts projectId={projectId} />
+      <TimingBreakdown projectId={projectId} />
+      <UptimeCharts projectId={projectId} />
+      <DowntimeHistory projectId={projectId} />
       <UptimeHistoryCharts projectId={projectId} />
       <LatencyComparison projectId={projectId} />
     </div>
