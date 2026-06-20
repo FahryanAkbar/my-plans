@@ -1,100 +1,50 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  OnApplicationBootstrap,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Injectable } from '@nestjs/common';
 import { Project } from './entities/project.entity';
 import { MonitoringConfig } from './entities/monitoring-config.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateMonitoringConfigDto } from './dto/create-monitoring-config.dto';
 import { UpdateMonitoringConfigDto } from './dto/update-monitoring-config.dto';
+import { ProjectRepository } from './repositories/project.repository';
+import { MonitoringConfigRepository } from './repositories/monitoring-config.repository';
+import { QueueJobRepository } from './repositories/queue-job.repository';
 
 @Injectable()
-export class ProjectsService implements OnApplicationBootstrap {
+export class ProjectsService {
   constructor(
-    @InjectRepository(Project)
-    private readonly projectRepository: Repository<Project>,
-    @InjectRepository(MonitoringConfig)
-    private readonly configRepository: Repository<MonitoringConfig>,
-    @InjectQueue('monitoring-queue')
-    private readonly monitoringQueue: Queue,
+    private readonly projectRepository: ProjectRepository,
+    private readonly monitoringConfigRepository: MonitoringConfigRepository,
+    private readonly queueJobRepository: QueueJobRepository,
   ) {}
-
-  async onApplicationBootstrap() {
-    console.log('[API] Syncing active monitoring configs with Redis Queue...');
-    const activeConfigs = await this.configRepository.find({
-      where: { enabled: true, isArchived: false },
-    });
-
-    console.log(
-      `[API] Found ${activeConfigs.length} active configs to register.`,
-    );
-
-    for (const config of activeConfigs) {
-      await this.addMonitoringJob(config);
-      console.log(`[API] Registered repeatable job for URL: ${config.url}`);
-    }
-    console.log('[API] Redis Queue synchronization complete.');
-  }
 
   // --- PROJECT CRUD ---
 
-  async createProject(createProjectDto: CreateProjectDto): Promise<Project> {
-    const existing = await this.projectRepository.findOne({
-      where: { id: createProjectDto.id },
-    });
-    if (existing) {
-      throw new ConflictException(
-        `Project with ID ${createProjectDto.id} already exists`,
-      );
-    }
-    const project = this.projectRepository.create(createProjectDto);
-    return this.projectRepository.save(project);
+  createProject(dto: CreateProjectDto): Promise<Project> {
+    return this.projectRepository.create(dto);
   }
 
-  async findAllProjects(): Promise<Project[]> {
-    return this.projectRepository.find({
-      relations: { monitoringConfigs: true },
-    });
+  findAllProjects(): Promise<Project[]> {
+    return this.projectRepository.findAll();
   }
 
-  async findOneProject(id: string): Promise<Project> {
-    const project = await this.projectRepository.findOne({
-      where: { id },
-      relations: { monitoringConfigs: true },
-    });
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${id} not found`);
-    }
-    return project;
+  findOneProject(id: string): Promise<Project> {
+    return this.projectRepository.findOneById(id);
   }
 
-  async updateProject(
-    id: string,
-    updateProjectDto: UpdateProjectDto,
-  ): Promise<Project> {
-    const project = await this.findOneProject(id);
-    Object.assign(project, updateProjectDto);
-    return this.projectRepository.save(project);
+  updateProject(id: string, dto: UpdateProjectDto): Promise<Project> {
+    return this.projectRepository.update(id, dto);
   }
 
   async removeProject(id: string): Promise<void> {
-    const project = await this.findOneProject(id);
+    const project = await this.projectRepository.findOneById(id);
 
-    // Remove all monitoring jobs for this project from Redis
-    if (project.monitoringConfigs && project.monitoringConfigs.length > 0) {
+    if (project.monitoringConfigs?.length > 0) {
       for (const config of project.monitoringConfigs) {
-        await this.removeMonitoringJob(config.id);
+        await this.queueJobRepository.remove(config.id);
       }
     }
 
-    await this.projectRepository.remove(project);
+    await this.projectRepository.remove(id);
   }
 
   // --- MONITORING CONFIG CRUD ---
@@ -103,43 +53,30 @@ export class ProjectsService implements OnApplicationBootstrap {
     projectId: string,
     dto: CreateMonitoringConfigDto,
   ): Promise<MonitoringConfig> {
-    // Ensure project exists first
-    await this.findOneProject(projectId);
+    await this.projectRepository.findOneById(projectId);
 
-    const config = this.configRepository.create({
-      ...dto,
+    const savedConfig = await this.monitoringConfigRepository.create(
+      dto,
       projectId,
-    });
-    const savedConfig = await this.configRepository.save(config);
+    );
 
-    // Add to Redis Queue if enabled
     if (savedConfig.enabled && !savedConfig.isArchived) {
-      await this.addMonitoringJob(savedConfig);
+      await this.queueJobRepository.add(savedConfig);
     }
 
     return savedConfig;
   }
 
   async findConfigsByProject(projectId: string): Promise<MonitoringConfig[]> {
-    await this.findOneProject(projectId);
-    return this.configRepository.find({
-      where: { projectId, isArchived: false },
-    });
+    await this.projectRepository.findOneById(projectId);
+    return this.monitoringConfigRepository.findByProject(projectId);
   }
 
-  async findOneConfig(
+  findOneConfig(
     projectId: string,
     configId: string,
   ): Promise<MonitoringConfig> {
-    const config = await this.configRepository.findOne({
-      where: { id: configId, projectId },
-    });
-    if (!config) {
-      throw new NotFoundException(
-        `Monitoring config with ID ${configId} not found under project ${projectId}`,
-      );
-    }
-    return config;
+    return this.monitoringConfigRepository.findOne(projectId, configId);
   }
 
   async updateConfig(
@@ -147,82 +84,26 @@ export class ProjectsService implements OnApplicationBootstrap {
     configId: string,
     dto: UpdateMonitoringConfigDto,
   ): Promise<MonitoringConfig> {
-    const config = await this.findOneConfig(projectId, configId);
-    Object.assign(config, dto);
-    const savedConfig = await this.configRepository.save(config);
+    const savedConfig = await this.monitoringConfigRepository.update(
+      projectId,
+      configId,
+      dto,
+    );
 
-    // Sync repeatable job in Queue
     if (savedConfig.enabled && !savedConfig.isArchived) {
-      await this.addMonitoringJob(savedConfig);
+      await this.queueJobRepository.add(savedConfig);
     } else {
-      await this.removeMonitoringJob(savedConfig.id);
+      await this.queueJobRepository.remove(savedConfig.id);
     }
 
     return savedConfig;
   }
 
   async removeConfig(projectId: string, configId: string): Promise<void> {
-    const config = await this.findOneConfig(projectId, configId);
-
-    await this.configRepository.remove(config);
-
-    // Remove any scheduled job from Redis Queue
-    await this.removeMonitoringJob(config.id);
-  }
-
-  // --- QUEUE JOB HELPERS ---
-
-  async addMonitoringJob(config: MonitoringConfig): Promise<void> {
-    // Ensure any previous job configuration for this config is removed first
-    await this.removeMonitoringJob(config.id);
-
-    // Add repeatable job using config.id as jobId
-    await this.monitoringQueue.add(
-      'ping-job',
-      {
-        configId: config.id,
-        projectId: config.projectId,
-        url: config.url,
-        timeout: config.timeout,
-        expectedStatus: config.expectedStatus,
-        checkSsl: config.checkSsl,
-        engine: config.engine,
-        networkProfile: config.networkProfile,
-      },
-      {
-        jobId: config.id, // unique ID of the job
-        repeat: {
-          every: config.interval,
-        },
-        removeOnComplete: true, // clean up finished jobs from Redis
-        removeOnFail: true,
-      },
+    const config = await this.monitoringConfigRepository.remove(
+      projectId,
+      configId,
     );
-  }
-
-  async removeMonitoringJob(configId: string): Promise<void> {
-    const repeatableJobs = await this.monitoringQueue.getRepeatableJobs();
-    const client = await this.monitoringQueue.client;
-    for (const job of repeatableJobs) {
-      const rawData = await client.hget(
-        `bull:${this.monitoringQueue.name}:repeat:${job.key}`,
-        'data',
-      );
-      if (rawData) {
-        try {
-          const parsed = JSON.parse(rawData) as Record<string, unknown>;
-          if (parsed && parsed.configId === configId) {
-            await this.monitoringQueue.removeRepeatableByKey(job.key);
-            console.log(
-              `[API] Successfully removed stale repeatable job key: ${job.key} for config ${configId}`,
-            );
-          }
-        } catch (err) {
-          console.error(
-            `[API] Error parsing repeatable job data for config ${configId}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
-      }
-    }
+    await this.queueJobRepository.remove(config.id);
   }
 }

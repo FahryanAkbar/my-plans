@@ -2,3 +2,7 @@ node_modules
 dist
 .git
 .env
+npm-debug.log
+*.log
+coverage
+.DS_Store
