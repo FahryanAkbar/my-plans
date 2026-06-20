@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 import { BatchService } from '../batch.service';
 
 export interface BatchJobData {
-  date: string; // Format: YYYY-MM-DD atau 'auto'
+  date: string;
 }
 
 @Processor('batch-queue')
@@ -16,14 +16,7 @@ export class BatchProcessor extends WorkerHost {
   }
 
   async process(job: Job<BatchJobData>): Promise<void> {
-    let { date } = job.data;
-
-    // Jika 'auto', hitung tanggal kemarin secara otomatis (untuk run terjadwal harian)
-    if (date === 'auto') {
-      const yesterday = new Date(Date.now() - 86400000);
-      date = yesterday.toISOString().split('T')[0];
-    }
-
+    const { date } = job.data;
     this.logger.log(`[Batch] Processing job ${job.id} for date: ${date}`);
     await this.batchService.runPipelineForDate(date);
   }
