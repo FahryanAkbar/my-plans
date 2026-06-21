@@ -39,10 +39,12 @@ export class DigitalTwinService {
       });
     }
 
-    const realtimeMap = await this.getRealtimeMetrics(projectId);
-    const dailySummaries = await this.dailySummaryRepo.find({
-      where: { projectId, date: getTodayDateString() },
-    });
+    const [realtimeMap, dailySummaries] = await Promise.all([
+      this.getRealtimeMetrics(projectId),
+      this.dailySummaryRepo.find({
+        where: { projectId, date: getTodayDateString() },
+      }),
+    ]);
 
     const twins = mapToTwinObjects(
       project.monitoringConfigs,
