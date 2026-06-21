@@ -157,8 +157,10 @@ export function mapNetworkFlowAnalysis(
 
     const totalNetworkTime = round(dns + tcp + tls + ttfb + download);
 
-    // Tentukan bottleneck: layer dengan waktu terlama
-    const timings: Record<NetworkFlowAnalysis['bottleneck'], number> = {
+    const timings: Record<
+      Exclude<NetworkFlowAnalysis['bottleneck'], null>,
+      number
+    > = {
       dnsTime: dns,
       tcpTime: tcp,
       tlsTime: tls,
@@ -166,9 +168,15 @@ export function mapNetworkFlowAnalysis(
       downloadTime: download,
     };
 
-    const bottleneck = (
-      Object.entries(timings) as [NetworkFlowAnalysis['bottleneck'], number][]
-    ).reduce((prev, curr) => (curr[1] > prev[1] ? curr : prev))[0];
+    const bottleneck =
+      totalNetworkTime > 0
+        ? (
+            Object.entries(timings) as [
+              Exclude<NetworkFlowAnalysis['bottleneck'], null>,
+              number,
+            ][]
+          ).reduce((prev, curr) => (curr[1] > prev[1] ? curr : prev))[0]
+        : null;
 
     return {
       configId: row.configId,

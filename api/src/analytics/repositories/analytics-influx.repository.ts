@@ -103,7 +103,10 @@ export class AnalyticsInfluxRepository implements OnModuleInit {
     `);
   }
 
-  getNetworkFlowAnalysis(projectId: string, range: AnalyticsRange) {
+  getNetworkFlowAnalysis(
+    projectId: string,
+    range: AnalyticsRange,
+  ): Promise<NetworkFlowRow[]> {
     return this.queryApi.collectRows<NetworkFlowRow>(`
       from(bucket: ${toFluxString(this.bucket)})
         |> range(start: -${range})

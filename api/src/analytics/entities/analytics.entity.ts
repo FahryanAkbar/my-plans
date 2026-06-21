@@ -106,5 +106,11 @@ export interface NetworkFlowAnalysis {
   ttfbTime: number;
   downloadTime: number;
   totalNetworkTime: number;
-  bottleneck: 'dnsTime' | 'tcpTime' | 'tlsTime' | 'ttfbTime' | 'downloadTime';
+  bottleneck:
+    | 'dnsTime'
+    | 'tcpTime'
+    | 'tlsTime'
+    | 'ttfbTime'
+    | 'downloadTime'
+    | null;
 }

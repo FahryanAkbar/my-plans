@@ -12,6 +12,7 @@ export const DEFAULT_UPTIME_STATS_RANGE = AnalyticsRange.TWENTY_FOUR_HOURS;
 export const DEFAULT_DOWNTIME_RANGE = AnalyticsRange.SEVEN_DAYS;
 export const DEFAULT_UPTIME_HISTORY_RANGE = AnalyticsRange.THIRTY_DAYS;
 export const DEFAULT_TIMING_BREAKDOWN_RANGE = AnalyticsRange.TWENTY_FOUR_HOURS;
+export const DEFAULT_NETWORK_FLOW_RANGE = AnalyticsRange.TWENTY_FOUR_HOURS;
 
 export const STANDARD_ANALYTICS_RANGES = [
   AnalyticsRange.ONE_HOUR,
