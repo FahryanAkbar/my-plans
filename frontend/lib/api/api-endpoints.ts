@@ -5,6 +5,7 @@ const createServiceBuilder = (servicePrefix: string) => {
 const monitoringService = createServiceBuilder('/monitoring')
 const analyticsService = createServiceBuilder('/analytics')
 const simulationService = createServiceBuilder('/simulation')
+const batchService = createServiceBuilder('/batch')
 
 export const API_ENDPOINTS = {
   PROJECTS: {
@@ -13,6 +14,12 @@ export const API_ENDPOINTS = {
   MONITORING: {
     HEALTH: monitoringService('health'),
     WORKERS: monitoringService('workers'),
+  },
+  BATCH: {
+    RUN: batchService('run'),
+  },
+  DIGITAL_TWIN: {
+    NAMESPACE: '/digital-twin',
   }
 }
 
@@ -31,6 +38,8 @@ export const getProjectEndpoints = (projectId: string) => ({
   },
   SIMULATION: {
     LATENCY_COMPARISON: simulationService(`projects/${projectId}/latency-comparison`),
+  },
+  BATCH: {
+    SUMMARIES: batchService(`summaries/${projectId}`),
   }
 })
-

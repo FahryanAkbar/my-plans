@@ -101,6 +101,23 @@ export class AnalyticsInfluxRepository implements OnModuleInit {
         |> keep(columns: ["_field", "_value", "configId", "url"])
     `);
   }
+
+  getRealtimeMetricsForDigitalTwin(projectId: string) {
+    return this.queryApi.collectRows<{
+      configId: string;
+      latency: number;
+      isUp: boolean;
+      _time: string;
+    }>(`
+      from(bucket: ${toFluxString(this.bucket)})
+        |> range(start: -30m)
+        |> filter(fn: (r) => r["_measurement"] == "http_checks")
+        |> filter(fn: (r) => r["projectId"] == ${toFluxString(projectId)})
+        |> filter(fn: (r) => r["_field"] == "latency" or r["_field"] == "isUp")
+        |> last()
+        |> pivot(rowKey: ["configId"], columnKey: ["_field"], valueColumn: "_value")
+    `);
+  }
 }
 
 function toFluxString(value: string): string {

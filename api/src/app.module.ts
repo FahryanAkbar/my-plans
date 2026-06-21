@@ -9,6 +9,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { BatchModule } from './batch/batch.module';
+import { DigitalTwinModule } from './digital-twin/digital-twin.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { BatchModule } from './batch/batch.module';
     AnalyticsModule,
     SimulationModule,
     BatchModule,
+    DigitalTwinModule,
   ],
   controllers: [AppController],
   providers: [AppService],

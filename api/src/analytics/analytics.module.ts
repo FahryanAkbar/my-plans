@@ -6,5 +6,6 @@ import { AnalyticsInfluxRepository } from './repositories/analytics-influx.repos
 @Module({
   controllers: [AnalyticsController],
   providers: [AnalyticsService, AnalyticsInfluxRepository],
+  exports: [AnalyticsInfluxRepository],
 })
 export class AnalyticsModule {}
