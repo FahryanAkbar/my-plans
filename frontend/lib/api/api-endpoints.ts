@@ -39,6 +39,7 @@ export const getProjectEndpoints = (projectId: string) => ({
   },
   SIMULATION: {
     LATENCY_COMPARISON: simulationService(`projects/${projectId}/latency-comparison`),
+    QOS: simulationService(`projects/${projectId}/qos`),
   },
   BATCH: {
     SUMMARIES: batchService(`summaries/${projectId}`),

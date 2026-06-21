@@ -10,3 +10,17 @@ export interface LatencyComparisonResponse {
   networkProfile: string; 
   series: SimulationDataPoint[];
 }
+
+export interface QosProfileMetrics {
+  avgLatencyMs: number;
+  uptimePercent: number;
+  qosScore: number;
+}
+
+export interface QosAnalysisResponse {
+  configId: string;
+  url: string;
+  profiles: Record<string, QosProfileMetrics>;
+  bestProfile: string;
+  worstProfile: string;
+}
