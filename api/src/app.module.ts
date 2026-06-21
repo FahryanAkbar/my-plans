@@ -10,6 +10,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { BatchModule } from './batch/batch.module';
 import { DigitalTwinModule } from './digital-twin/digital-twin.module';
+import { NetworkTopologyModule } from './network-topology/network-topology.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { DigitalTwinModule } from './digital-twin/digital-twin.module';
     SimulationModule,
     BatchModule,
     DigitalTwinModule,
+    NetworkTopologyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
