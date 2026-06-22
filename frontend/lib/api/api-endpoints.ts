@@ -6,6 +6,7 @@ const monitoringService = createServiceBuilder('/monitoring')
 const analyticsService = createServiceBuilder('/analytics')
 const simulationService = createServiceBuilder('/simulation')
 const batchService = createServiceBuilder('/batch')
+const networkTopologyService = createServiceBuilder('/network-topology')
 
 export const API_ENDPOINTS = {
   PROJECTS: {
@@ -43,5 +44,13 @@ export const getProjectEndpoints = (projectId: string) => ({
   },
   BATCH: {
     SUMMARIES: batchService(`summaries/${projectId}`),
+  },
+  NETWORK_TOPOLOGY: {
+    ROOT: networkTopologyService(`${projectId}`),
+    NODES: networkTopologyService(`${projectId}/nodes`),
+    NODE_DETAIL: (nodeId: string) => networkTopologyService(`${projectId}/nodes/${nodeId}`),
+    EDGES: networkTopologyService(`${projectId}/edges`),
+    EDGE_DETAIL: (edgeId: string) => networkTopologyService(`${projectId}/edges/${edgeId}`),
+    IMPACT: (configId: string) => networkTopologyService(`${projectId}/impact/${configId}`),
   }
 })
