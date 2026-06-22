@@ -29,7 +29,7 @@ export function MonitoringWebsitesDetailCard({
 }: MonitoringWebsitesDetailCardProps) {
   return (
     <Card className={cn("border border-border/40 shadow-sm bg-card rounded-2xl overflow-hidden relative", className)}>
-      <div className="absolute top-0 left-0 w-full h-0.75 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
+      <div className="absolute top-0 left-0 w-full h-0.75" />
       
       <CardContent className="p-6 space-y-6">
         {/* Main info row */}

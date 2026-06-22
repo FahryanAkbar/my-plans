@@ -22,6 +22,7 @@ import {
   NetworkFlow,
   MonitoringWebsitesToolbar,
   MonitoringWebsitesDetailCard,
+  QosAnalysis,
 } from "@/components/organisms";
 import { useMonitoringWebsiteDetail } from "@/hooks";
 
@@ -132,6 +133,7 @@ export function MonitoringWebsitesTemplate({
         <TabsContent value="performance" className="space-y-6 outline-none animate-in fade-in-50 duration-300">
           <LatencyCharts projectId={projectId} configId={configId} range={range} />
           <LatencyComparison projectId={projectId} configId={configId} range={range} />
+          <QosAnalysis projectId={projectId} configId={configId} range={range} />
         </TabsContent>
 
         <TabsContent value="uptime" className="space-y-6 outline-none animate-in fade-in-50 duration-300">
