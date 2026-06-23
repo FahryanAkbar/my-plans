@@ -11,6 +11,8 @@ import { Id, Doc } from "@/convex/_generated/dataModel";
 import { InviteMemberPayload, InviteMembersResult } from '@/types/features'
 import { cn } from "@/lib";
 import { MonitoringTab } from "../../monitoring-website";
+import { TopologyCanvas } from "@/components/organisms/topology";
+
 
 interface TabContentProps {
   activeTab: ProjectTab;
@@ -247,6 +249,13 @@ export const ProjectTabsContent = ({
           <MonitoringTab projectId={project._id} projectName={project.name} />
         </div>
       )}
+
+      {activeTab === "topology" && (
+        <div className="w-full animate-in fade-in-50 duration-500">
+          <TopologyCanvas projectId={project._id} />
+        </div>
+      )}
+
 
       {activeTab === "settings" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

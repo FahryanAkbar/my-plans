@@ -13,6 +13,7 @@ export type ProjectTab =
   | 'members'
   | 'monitoring'
   | 'settings'
+  | 'topology'
 
 interface TabConfig {
   value: ProjectTab
@@ -30,6 +31,7 @@ const PROJECT_TABS: TabConfig[] = [
   { value: 'overview', label: 'Overview' },
   { value: 'members', label: 'Members' },
   { value: 'monitoring', label: 'Monitoring' },
+  { value: 'topology', label: 'Topology' },
   { value: 'settings', label: 'Settings' },
 ]
 
