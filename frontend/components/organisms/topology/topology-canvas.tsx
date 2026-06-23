@@ -134,7 +134,12 @@ export function TopologyCanvas({ projectId, className }: TopologyCanvasProps) {
   // Trigger cascade animation when simulation impactResult is received
   useEffect(() => {
     if (impactResult && selectedNodeId) {
-      const sourceNode = localNodes.find(n => n.configId === impactResult.sourceNodeId || n.id === selectedNodeId);
+      const sourceNode = localNodes.find(
+        n =>
+          n.id === impactResult.sourceNodeId ||
+          n.configId === impactResult.sourceNodeId ||
+          n.id === selectedNodeId
+      );
       const sourceId = sourceNode ? sourceNode.id : selectedNodeId;
 
       // Group impacted nodes by depth
