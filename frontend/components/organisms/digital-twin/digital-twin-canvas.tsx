@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Line, Html } from "@react-three/drei";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { 
   Activity, 
   RotateCcw, 
@@ -242,7 +243,7 @@ export function DigitalTwinCanvas({ projectId, className }: DigitalTwinCanvasPro
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showLabels, setShowLabels] = useState(true);
   const [lowPowerMode, setLowPowerMode] = useState(false);
-  const orbitRef = useRef<typeof OrbitControls | null>(null);
+  const orbitRef = useRef<OrbitControlsImpl | null>(null);
 
   // C. Local Telemetry Log Mock
   const [mockLogs, setMockLogs] = useState<Array<{ time: string; msg: string; type: "info" | "warn" | "error" | "success" }>>([]);
@@ -313,7 +314,7 @@ export function DigitalTwinCanvas({ projectId, className }: DigitalTwinCanvasPro
   }, [twinState]);
 
   const handleResetCamera = () => {
-    if (orbitRef.current && 'reset' in orbitRef.current && typeof orbitRef.current.reset === 'function') {
+    if (orbitRef.current) {
       orbitRef.current.reset();
       toast.info("Camera view centered");
     }

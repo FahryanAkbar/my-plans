@@ -13,6 +13,7 @@ import { cn } from "@/lib";
 import { MonitoringTab } from "../../monitoring-website";
 import { TopologyCanvas } from "@/components/organisms/topology";
 import { DigitalTwinCanvas } from "@/components/organisms/digital-twin";
+import { BatchProcessingTab } from "../../batch-processing";
 
 
 interface TabContentProps {
@@ -260,6 +261,12 @@ export const ProjectTabsContent = ({
       {activeTab === "digital-twin" && (
         <div className="w-full animate-in fade-in-50 duration-500">
           <DigitalTwinCanvas projectId={project._id} />
+        </div>
+      )}
+
+      {activeTab === "batch" && (
+        <div className="w-full animate-in fade-in-50 duration-500">
+          <BatchProcessingTab projectId={project._id} />
         </div>
       )}
 
