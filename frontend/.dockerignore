@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+.git
+.husky
+.storybook
+npm-debug.log
+*.log
+coverage
+.DS_Store

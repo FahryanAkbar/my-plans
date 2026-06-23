@@ -8,7 +8,8 @@ import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
 import { ROLES, USER_POSITION } from "@/lib";
 import { useEdgeStore } from "@/lib/api/edgestore";
-import { isSafeFile, sanitizeHtml, stripHtml } from "@/lib/utils";
+import { isSafeFile, stripHtml } from "@/lib/utils";
+import { useProject } from "@/hooks";
 
 type ProjectSettingsForm = {
   name: string;
@@ -29,6 +30,8 @@ export const useProjectSettingsTab = (project: Doc<"projects">) => {
   const remove = useMutation(api.project.remove);
   const leave = useMutation(api.project.leave);
   const currentMember = useQuery(api.project.getCurrentMember, { projectId: project._id });
+
+  const { updateProject, removeProject } = useProject(project._id);
 
   const { edgestore } = useEdgeStore();
   const [isPending, setIsPending] = React.useState(false);
@@ -96,6 +99,13 @@ export const useProjectSettingsTab = (project: Doc<"projects">) => {
         projectImage: imageUrl,
       });
 
+      // Sync name update to NestJS / PostgreSQL
+      try {
+        await updateProject({ name: cleanedName });
+      } catch (err) {
+        console.error("Failed to sync project name to NestJS backend:", err);
+      }
+
       toast.success("Project updated successfully");
       
       // Update state lokal agar input field langsung bersih
@@ -113,12 +123,22 @@ export const useProjectSettingsTab = (project: Doc<"projects">) => {
     } finally {
       setIsPending(false);
     }
-  }, [edgestore.publicFiles, file, form, project._id, project.projectImage, update]);
+  }, [edgestore.publicFiles, file, form, project._id, project.projectImage, update, updateProject]);
 
   const onDelete = React.useCallback(async () => {
     try {
       setIsPending(true);
+
+      // Delete from NestJS / PostgreSQL via hook (safely catching errors)
+      try {
+        await removeProject();
+      } catch (err) {
+        console.error("Failed to delete project from NestJS backend:", err);
+      }
+
+      // Delete from Convex
       await remove({ id: project._id });
+      
       toast.success("Project deleted successfully");
       router.push("/project");
     } catch {
@@ -126,7 +146,7 @@ export const useProjectSettingsTab = (project: Doc<"projects">) => {
     } finally {
       setIsPending(false);
     }
-  }, [project._id, remove, router]);
+  }, [project._id, remove, removeProject, router]);
 
   const onLeave = React.useCallback(async () => {
     try {
