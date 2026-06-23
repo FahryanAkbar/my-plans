@@ -8,6 +8,9 @@ import { ProjectsModule } from './projects/projects.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SimulationModule } from './simulation/simulation.module';
+import { BatchModule } from './batch/batch.module';
+import { DigitalTwinModule } from './digital-twin/digital-twin.module';
+import { NetworkTopologyModule } from './network-topology/network-topology.module';
 
 @Module({
   imports: [
@@ -45,9 +48,11 @@ import { SimulationModule } from './simulation/simulation.module';
     MonitoringModule,
     AnalyticsModule,
     SimulationModule,
+    BatchModule,
+    DigitalTwinModule,
+    NetworkTopologyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-
