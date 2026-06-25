@@ -62,11 +62,16 @@ export function useTopologyCanvas(projectId: string) {
   // CRUD Dialog Modals
   const [showAddNodeModal, setShowAddNodeModal] = useState(false);
   const [showAddEdgeModal, setShowAddEdgeModal] = useState(false);
+  const [showEditNodeModal, setShowEditNodeModal] = useState(false);
 
   // Form states
   const [newNodeName, setNewNodeName] = useState("");
   const [newNodeType, setNewNodeType] = useState<NodeType>(NodeType.SERVICE);
   const [newNodeConfigId, setNewNodeConfigId] = useState<string>("");
+
+  const [editNodeName, setEditNodeName] = useState("");
+  const [editNodeType, setEditNodeType] = useState<NodeType>(NodeType.SERVICE);
+  const [editNodeConfigId, setEditNodeConfigId] = useState<string>("");
 
   const [newEdgeSourceId, setNewEdgeSourceId] = useState("");
   const [newEdgeTargetId, setNewEdgeTargetId] = useState("");
@@ -288,6 +293,37 @@ export function useTopologyCanvas(projectId: string) {
     }
   };
 
+  const handleEditNodeClick = () => {
+    const selectedNode = localNodes.find(n => n.id === selectedNodeId);
+    if (selectedNode) {
+      setEditNodeName(selectedNode.label);
+      setEditNodeType(selectedNode.nodeType);
+      setEditNodeConfigId(selectedNode.configId || "");
+      setShowEditNodeModal(true);
+    }
+  };
+
+  const handleEditNodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedNodeId) return;
+    if (!editNodeName.trim()) {
+      toast.error("Node label is required");
+      return;
+    }
+
+    try {
+      await updateNode(selectedNodeId, {
+        label: editNodeName,
+        nodeType: editNodeType,
+        configId: editNodeConfigId || null,
+      });
+      setShowEditNodeModal(false);
+      toast.success("Successfully updated node configuration");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleCreateEdgeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEdgeSourceId || !newEdgeTargetId) {
@@ -461,6 +497,8 @@ export function useTopologyCanvas(projectId: string) {
     setShowAddNodeModal,
     showAddEdgeModal,
     setShowAddEdgeModal,
+    showEditNodeModal,
+    setShowEditNodeModal,
     
     // form state & setters
     newNodeName,
@@ -469,6 +507,12 @@ export function useTopologyCanvas(projectId: string) {
     setNewNodeType,
     newNodeConfigId,
     setNewNodeConfigId,
+    editNodeName,
+    setEditNodeName,
+    editNodeType,
+    setEditNodeType,
+    editNodeConfigId,
+    setEditNodeConfigId,
     newEdgeSourceId,
     setNewEdgeSourceId,
     newEdgeTargetId,
@@ -494,6 +538,8 @@ export function useTopologyCanvas(projectId: string) {
     
     handleCreateNodeSubmit,
     handleCreateEdgeSubmit,
+    handleEditNodeClick,
+    handleEditNodeSubmit,
     handleDeleteNode,
     handleDeleteEdge,
     handleStartSimulation,

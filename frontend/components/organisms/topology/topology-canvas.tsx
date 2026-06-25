@@ -10,6 +10,7 @@ import { TopologyEdge } from "./topology-edge";
 import { TopologyInspector } from "./topology-inspector";
 import { AddNodeModal } from "./add-node-modal";
 import { AddLinkModal } from "./add-link-modal";
+import { EditNodeModal } from "./edit-node-modal";
 
 interface TopologyCanvasProps {
   projectId: string;
@@ -35,12 +36,20 @@ export function TopologyCanvas({ projectId, className }: TopologyCanvasProps) {
     setShowAddNodeModal,
     showAddEdgeModal,
     setShowAddEdgeModal,
+    showEditNodeModal,
+    setShowEditNodeModal,
     newNodeName,
     setNewNodeName,
     newNodeType,
     setNewNodeType,
     newNodeConfigId,
     setNewNodeConfigId,
+    editNodeName,
+    setEditNodeName,
+    editNodeType,
+    setEditNodeType,
+    editNodeConfigId,
+    setEditNodeConfigId,
     newEdgeSourceId,
     setNewEdgeSourceId,
     newEdgeTargetId,
@@ -58,6 +67,8 @@ export function TopologyCanvas({ projectId, className }: TopologyCanvasProps) {
     resetView,
     handleCreateNodeSubmit,
     handleCreateEdgeSubmit,
+    handleEditNodeClick,
+    handleEditNodeSubmit,
     handleDeleteNode,
     handleDeleteEdge,
     handleStartSimulation,
@@ -302,6 +313,7 @@ export function TopologyCanvas({ projectId, className }: TopologyCanvasProps) {
           selectedNode && handleStartSimulation(selectedNode)
         }
         onStopSimulation={handleStopSimulation}
+        onEditNodeClick={handleEditNodeClick}
       />
 
       {/* MODAL DIALOGS */}
@@ -329,6 +341,19 @@ export function TopologyCanvas({ projectId, className }: TopologyCanvasProps) {
         localNodes={localNodes}
         onClose={() => setShowAddEdgeModal(false)}
         onSubmit={handleCreateEdgeSubmit}
+      />
+
+      <EditNodeModal
+        show={showEditNodeModal}
+        editNodeName={editNodeName}
+        onEditNodeNameChange={setEditNodeName}
+        editNodeType={editNodeType}
+        onEditNodeTypeChange={setEditNodeType}
+        editNodeConfigId={editNodeConfigId}
+        onEditNodeConfigIdChange={setEditNodeConfigId}
+        configs={configs}
+        onClose={() => setShowEditNodeModal(false)}
+        onSubmit={handleEditNodeSubmit}
       />
     </div>
   );

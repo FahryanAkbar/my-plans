@@ -88,23 +88,23 @@ export function TelemetryHud({
           </div>
 
           <div className="space-y-2">
-            <Typography className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block">
+            <Typography className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
               Infrastructure Info
             </Typography>
-            <div className="space-y-1.5 bg-slate-950/40 border border-border/25 rounded-xl p-3.5 text-xs text-foreground/80">
+            <div className="space-y-1.5 bg-card border border-border/50 shadow-xs rounded-xl p-3.5 text-xs text-foreground">
               <div className="flex justify-between">
-                <span className="text-muted-foreground/60">Node Name:</span>
-                <span className="font-semibold">{selectedNode.label}</span>
+                <span className="text-muted-foreground">Node Name:</span>
+                <span className="font-semibold text-foreground">{selectedNode.label}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground/60">Database ID:</span>
-                <span className="font-mono text-[10px] text-muted-foreground/80 select-all">
+                <span className="text-muted-foreground">Database ID:</span>
+                <span className="font-mono text-[10px] text-foreground/90 select-all">
                   {selectedNode.id}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground/60">Mapped Config:</span>
-                <span className="font-medium text-foreground/75">
+                <span className="text-muted-foreground">Mapped Config:</span>
+                <span className="font-medium text-foreground">
                   {selectedNode.configId ? "Connected Config" : "Not Mapped"}
                 </span>
               </div>
@@ -115,47 +115,47 @@ export function TelemetryHud({
             selectedTwin ? (
               <div className="space-y-4 flex-1">
                 <div className="space-y-2">
-                  <Typography className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block">
+                  <Typography className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                     Live Telemetry Metrics
                   </Typography>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 bg-slate-950/45 border border-border/20 rounded-xl space-y-1">
-                      <span className="text-muted-foreground/50 text-[10px] block">
+                    <div className="p-3 bg-card border border-border/40 shadow-xs rounded-xl space-y-1">
+                      <span className="text-muted-foreground text-[10px] block">
                         Health Score:
                       </span>
                       <div className="flex items-center gap-1.5">
                         <Activity
                           className={`h-4 w-4 ${
                             selectedTwin.twinHealth > 85
-                              ? "text-emerald-400"
+                              ? "text-emerald-600 dark:text-emerald-400"
                               : selectedTwin.twinHealth > 60
-                                ? "text-amber-400"
-                                : "text-red-400 animate-pulse"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-red-600 dark:text-red-400 animate-pulse"
                           }`}
                         />
-                        <span className="text-sm font-bold">
+                        <span className="text-sm font-bold text-foreground">
                           {selectedTwin.twinHealth}%
                         </span>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-slate-950/45 border border-border/20 rounded-xl space-y-1">
-                      <span className="text-muted-foreground/50 text-[10px] block">
+                    <div className="p-3 bg-card border border-border/40 shadow-xs rounded-xl space-y-1">
+                      <span className="text-muted-foreground text-[10px] block">
                         Flow Trend:
                       </span>
                       <div className="flex items-center gap-1.5 font-semibold">
                         {selectedTwin.trend === "stable" ? (
                           <>
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                            <span className="text-xs text-foreground/80 capitalize">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs text-foreground capitalize">
                               {selectedTwin.trend}
                             </span>
                           </>
                         ) : selectedTwin.trend === "recovering" ? (
                           <>
-                            <TrendingUp className="h-4 w-4 text-emerald-400" />
-                            <span className="text-xs text-foreground/80 capitalize">
+                            <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs text-foreground capitalize">
                               {selectedTwin.trend}
                             </span>
                           </>
@@ -172,39 +172,39 @@ export function TelemetryHud({
                   </div>
 
                   <div className="space-y-2 pt-2 text-xs">
-                    <div className="bg-slate-950/45 border border-border/20 rounded-xl p-3 space-y-2">
+                    <div className="bg-card border border-border/40 shadow-xs rounded-xl p-3 space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground/60">
+                        <span className="text-muted-foreground">
                           Live Response Latency:
                         </span>
                         <span className="font-bold text-foreground">
                           {selectedTwin.latencyMs} ms
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-white/5">
-                        <span className="text-muted-foreground/55">
+                      <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-border/20">
+                        <span className="text-muted-foreground/85">
                           Avg Response Latency:
                         </span>
-                        <span className="font-semibold text-muted-foreground/80">
+                        <span className="font-semibold text-foreground/80">
                           {selectedTwin.avgLatencyMs} ms
                         </span>
                       </div>
                     </div>
 
-                    <div className="bg-slate-950/45 border border-border/20 rounded-xl p-3 space-y-2">
+                    <div className="bg-card border border-border/40 shadow-xs rounded-xl p-3 space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground/60">
+                        <span className="text-muted-foreground">
                           Uptime Percent:
                         </span>
                         <span className="font-bold text-foreground">
                           {selectedTwin.uptimePercent.toFixed(3)}%
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-white/5">
-                        <span className="text-muted-foreground/55">
+                      <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-border/20">
+                        <span className="text-muted-foreground/85">
                           Outage Incidents:
                         </span>
-                        <span className="font-bold text-destructive/80 flex items-center gap-1">
+                        <span className="font-bold text-destructive flex items-center gap-1">
                           {selectedTwin.downtimeIncidents > 0 && (
                             <ShieldAlert className="h-3 w-3" />
                           )}
@@ -253,7 +253,7 @@ export function TelemetryHud({
       ) : (
         <div className="space-y-4 flex-1 flex flex-col h-full min-h-0">
           <div className="space-y-2">
-            <Typography className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block">
+            <Typography className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
               Network Gateway Logs
             </Typography>
             <div className="flex flex-col gap-1.5 max-h-80 xl:max-h-none overflow-y-auto pr-1">
@@ -261,7 +261,7 @@ export function TelemetryHud({
                 mockLogs.map((log, idx) => (
                   <div
                     key={idx}
-                    className="flex gap-2 text-[10.5px] border-b border-white/5 pb-1.5 leading-relaxed font-mono"
+                    className="flex gap-2 text-[10.5px] border-b border-border/30 pb-1.5 leading-relaxed font-mono"
                   >
                     <span className="text-muted-foreground/50 shrink-0">
                       [{log.time}]

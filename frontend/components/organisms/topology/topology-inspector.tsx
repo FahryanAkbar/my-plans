@@ -29,6 +29,7 @@ export interface TopologyInspectorProps {
   onDeleteEdge: (edgeId: string) => void;
   onStartSimulation: () => void;
   onStopSimulation: () => void;
+  onEditNodeClick: () => void;
 }
 
 export interface ImpactedNodeInfo {
@@ -57,6 +58,7 @@ export function TopologyInspector({
   onDeleteEdge,
   onStartSimulation,
   onStopSimulation,
+  onEditNodeClick,
 }: TopologyInspectorProps) {
   return (
     <div className="p-4 bg-muted/10 border-t xl:border-t-0 xl:border-l border-border/40 shrink-0 w-full xl:w-80 flex flex-col gap-4 overflow-y-auto animate-in fade-in duration-300">
@@ -107,10 +109,20 @@ export function TopologyInspector({
           </div>
 
           <div className="space-y-2">
-            <Typography className="text-xs font-bold text-muted-foreground/60 uppercase tracking-wider block">
-              Node Properties
-            </Typography>
-            <div className="space-y-1 bg-card/40 border border-border/20 rounded-xl p-3.5 text-xs">
+            <div className="flex justify-between items-center">
+              <Typography className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                Node Properties
+              </Typography>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-[10px] h-6 px-2 text-primary hover:text-primary-dark font-medium border border-primary/25 rounded-md hover:bg-primary/5"
+                onClick={onEditNodeClick}
+              >
+                Edit Properties
+              </Button>
+            </div>
+            <div className="space-y-1 bg-card border border-border/20 rounded-xl p-3.5 text-xs text-foreground">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Label:</span>
                 <span className="font-semibold text-foreground/80">

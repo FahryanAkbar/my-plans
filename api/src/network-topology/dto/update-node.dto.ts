@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { NodeType } from '../entities/network-node.entity';
 
 export class UpdateNodeDto {
@@ -9,6 +15,10 @@ export class UpdateNodeDto {
   @IsEnum(NodeType)
   @IsOptional()
   nodeType?: NodeType;
+
+  @IsUUID()
+  @IsOptional()
+  configId?: string | null;
 
   @IsNumber()
   @IsOptional()

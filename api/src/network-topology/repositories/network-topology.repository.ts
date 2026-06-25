@@ -36,7 +36,7 @@ export class NetworkTopologyRepository {
     id: string,
     dto: UpdateNodeDto,
   ): Promise<NetworkNode | null> {
-    await this.nodeRepo.update(id, dto);
+    await this.nodeRepo.update(id, dto as any);
     return this.nodeRepo.findOne({ where: { id } });
   }
 
