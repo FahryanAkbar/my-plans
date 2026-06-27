@@ -79,7 +79,7 @@ export function Typography({
   asChild = false,
   ...props
 }: TypographyProps) {
-  const Comp = asChild ? Slot.Root : defaultElement[variant]
+  const Comp = (asChild ? Slot.Root : defaultElement[variant]) as React.ComponentType<React.HTMLAttributes<HTMLElement>>
 
   return (
     <Comp

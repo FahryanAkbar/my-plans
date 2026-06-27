@@ -14,6 +14,8 @@ export type ProjectTab =
   | 'monitoring'
   | 'settings'
   | 'topology'
+  | 'digital-twin'
+  | 'batch'
 
 interface TabConfig {
   value: ProjectTab
@@ -32,6 +34,8 @@ const PROJECT_TABS: TabConfig[] = [
   { value: 'members', label: 'Members' },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'topology', label: 'Topology' },
+  { value: 'digital-twin', label: 'Digital Twin' },
+  { value: 'batch', label: 'Batch Processing' },
   { value: 'settings', label: 'Settings' },
 ]
 

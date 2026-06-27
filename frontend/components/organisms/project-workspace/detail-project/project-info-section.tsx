@@ -20,7 +20,7 @@ interface ProjectInfoSectionProps {
   fields: {
     label: string
     value: React.ReactNode
-    icon?: React.ElementType
+    icon?: React.ComponentType<{ className?: string }>
   }[]
   className?: string
 }

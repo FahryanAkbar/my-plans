@@ -7,7 +7,7 @@ import { Typography } from '@/components/atoms'
 interface ProjectFieldProps {
   label: string
   value: React.ReactNode
-  icon?: React.ElementType
+  icon?: React.ComponentType<{ className?: string }>
   className?: string
   valueClassName?: string
 }

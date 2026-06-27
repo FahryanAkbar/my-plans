@@ -22,7 +22,7 @@ import { Member } from "@/types";
 
 interface HeaderBadge {
   label: string;
-  icon?: React.ElementType;
+  icon?: React.ComponentType<{ className?: string }>;
   variant?: "default" | "secondary" | "outline" | "destructive";
 }
 
@@ -47,7 +47,6 @@ export const DailyLogDocumentHeader = ({
   activeMembers = [],
   onShare,
   onExpand,
-  onSave,
   onTitleChange,
   isLoading,
   className

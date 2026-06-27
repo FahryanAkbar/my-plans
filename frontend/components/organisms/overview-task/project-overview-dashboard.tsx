@@ -44,7 +44,7 @@ interface ProjectOverviewDashboardProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<string, { color: string, icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<string, { color: string, icon: React.ComponentType<{ className?: string }> }> = {
   TODO: { color: "bg-neutral/10 text-neutral-foreground dark:bg-neutral/20 dark:text-neutral-foreground border-neutral/20", icon: Clock },
   IN_PROGRESS: { color: "bg-info/10 text-info dark:bg-info/20 dark:text-info-foreground border-info/20", icon: CircleDot },
   IN_REVIEW: { color: "bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-secondary-foreground border-secondary/20", icon: ArrowUpRight },

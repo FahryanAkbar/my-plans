@@ -49,6 +49,7 @@ export interface CreateNodeRequest {
 export interface UpdateNodeRequest {
   label?: string;
   nodeType?: NodeType;
+  configId?: string | null;
   x?: number;
   y?: number;
 }

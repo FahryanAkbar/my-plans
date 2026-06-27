@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/atoms";
+import { Card } from "@/components/atoms";
 import {
   Search,
   Shuffle,
@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ArrowRight,
-  HelpCircle,
   Globe,
 } from "lucide-react";
 
@@ -37,7 +36,7 @@ interface StepDetails {
   key: keyof Omit<NetworkFlowResponse, "configId" | "url" | "totalNetworkTime" | "bottleneck">;
   label: string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const FLOW_STEPS: StepDetails[] = [
@@ -202,7 +201,7 @@ export function NetworkFlow({ className, projectId, configId, range }: NetworkFl
               <div className={cn(
                 "relative flex items-center lg:flex-col gap-4 lg:gap-2 p-4 lg:py-4 lg:px-2 rounded-2xl border transition-all duration-300 w-full lg:w-44 text-left lg:text-center",
                 isBottleneck 
-                  ? "bg-gradient-to-br from-rose-500/10 to-rose-500/5 border-rose-500/50 dark:border-rose-500/30 shadow-md shadow-rose-500/5 scale-105" 
+                  ? "bg-linear-to-br from-rose-500/10 to-rose-500/5 border-rose-500/50 dark:border-rose-500/30 shadow-md shadow-rose-500/5 scale-105" 
                   : "bg-background/40 border-border/40 hover:border-border/80 hover:shadow-xs"
               )}>
                 {/* Status dot / warning flag */}
