@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import { API_ENDPOINTS } from '@/lib';
 import { TwinStateDto } from '@/types/features';
 
-const TWIN_WS_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL?.replace('/api', '') ?? 'http://localhost:3001';
+const TWIN_WS_URL = process.env.NEXT_PUBLIC_MONITORING_API_URL?.replace(/\/api\/?$/, '') ?? 'http://localhost:3001';
 
 export const digitalTwinService = {
   connectToTwin(
