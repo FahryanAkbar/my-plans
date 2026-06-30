@@ -1,9 +1,13 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Queue } from 'bullmq';
 import { BatchInfluxRepository } from './repositories/batch-influx.repository';
 import { DailySummaryRepository } from './repositories/daily-summary.repository';
 import { DailySummary } from './entities/summary.entity';
+import { Project } from '../projects/entities/project.entity';
+import { MonitoringConfig } from '../projects/entities/monitoring-config.entity';
 import { mapRawRowsToSummaries } from './mappers/batch.mapper';
 import { BatchJobData } from './processors/batch.processor';
 
@@ -18,6 +22,10 @@ export class BatchService implements OnApplicationBootstrap {
   constructor(
     private readonly batchInfluxRepository: BatchInfluxRepository,
     private readonly dailySummaryRepository: DailySummaryRepository,
+    @InjectRepository(Project)
+    private readonly projectRepository: Repository<Project>,
+    @InjectRepository(MonitoringConfig)
+    private readonly configRepository: Repository<MonitoringConfig>,
     @InjectQueue('batch-queue') private readonly batchQueue: Queue,
   ) {}
 
@@ -76,17 +84,40 @@ export class BatchService implements OnApplicationBootstrap {
         return { processed: 0, date: targetDate };
       }
 
+      const existingProjects = await this.projectRepository.find({
+        select: { id: true },
+      });
+      const existingConfigs = await this.configRepository.find({
+        select: { id: true },
+      });
+
+      const activeProjectIds = new Set(existingProjects.map((p) => p.id));
+      const activeConfigIds = new Set(existingConfigs.map((c) => c.id));
+
       const summaries = mapRawRowsToSummaries(rawRows, targetDate);
-      this.logger.log(
-        `[Batch] Transformed into ${summaries.length} summary records`,
+
+      const activeSummaries = summaries.filter(
+        (s) =>
+          activeProjectIds.has(s.projectId) && activeConfigIds.has(s.configId),
       );
 
-      await this.dailySummaryRepository.upsert(summaries);
       this.logger.log(
-        `[Batch] Loaded ${summaries.length} summaries into PostgreSQL`,
+        `[Batch] Transformed into ${summaries.length} summary records (Active: ${activeSummaries.length})`,
       );
 
-      return { processed: summaries.length, date: targetDate };
+      if (activeSummaries.length === 0) {
+        this.logger.warn(
+          `[Batch] No active summary records to save for date: ${targetDate}`,
+        );
+        return { processed: 0, date: targetDate };
+      }
+
+      await this.dailySummaryRepository.upsert(activeSummaries);
+      this.logger.log(
+        `[Batch] Loaded ${activeSummaries.length} summaries into PostgreSQL`,
+      );
+
+      return { processed: activeSummaries.length, date: targetDate };
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
